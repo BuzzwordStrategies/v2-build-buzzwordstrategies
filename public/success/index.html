@@ -55,7 +55,7 @@
       const params = getUrlParams();
       if (params.session_id && params.bundle_id) {
         try {
-          // Call a Netlify function to update the status
+          // Update status in Supabase
           await fetch('/.netlify/functions/update-payment-status', {
             method: 'POST',
             headers: {
@@ -63,7 +63,8 @@
             },
             body: JSON.stringify({
               bundleID: params.bundle_id,
-              stripeSessionID: params.session_id
+              stripeSessionID: params.session_id,
+              status: 'paid'
             })
           });
           console.log('Payment status updated successfully');
