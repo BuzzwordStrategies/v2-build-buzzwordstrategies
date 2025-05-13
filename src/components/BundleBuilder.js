@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
+// Move products array outside component to avoid re-creation on each render
+const products = [
+  "Meta Ads", "Google Ads", "TikTok Ads", "SEO",
+  "GBP Ranker", "Backlinks", "Content", "Social Posts"
+];
+
 const BundleBuilder = () => {
   // Product and pricing data
-  const products = [
-    "Meta Ads", "Google Ads", "TikTok Ads", "SEO",
-    "GBP Ranker", "Backlinks", "Content", "Social Posts"
-  ];
 
   const pricing = {
     "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
