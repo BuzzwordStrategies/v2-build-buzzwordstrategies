@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import UserInfoForm from './UserInfoForm';
 
 // Move products array outside component to avoid re-creation on each render
 const products = [
@@ -8,7 +9,6 @@ const products = [
 
 const BundleBuilder = () => {
   // Product and pricing data
-
   const pricing = {
     "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
     "Google Ads": { Base: 770, Standard: 980, Premium: 1410 },
@@ -544,6 +544,11 @@ const BundleBuilder = () => {
   const [modalTier, setModalTier] = useState('');
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState('');
+  
+  // Form step state variables
+  const [formStep, setFormStep] = useState(0); // 0: bundle confirmation, 1: user info
+  const [userInfo, setUserInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate discounts
   const getSubscriptionDiscount = (months) => {
@@ -607,8 +612,15 @@ const BundleBuilder = () => {
     setShowModal(true);
   };
 
-  // Process checkout
-  const openDocuSignModal = async () => {
+  // Form submission handlers
+  const handleBundleConfirm = () => {
+    setFormStep(1);
+  };
+
+  const handleUserInfoSubmit = async (formData) => {
+    setUserInfo(formData);
+    setIsLoading(true);
+    
     const bundleID = "bwb-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
     
     const selectedServices = Object.entries(selectedTiers)
@@ -616,14 +628,6 @@ const BundleBuilder = () => {
       .map(([product, tier]) => `${product}: ${tier}`)
       .join(', ');
     
-    console.log('Sending to DocuSign:', {
-      bundleID,
-      bundleName: bundleName || 'My Bundle',
-      subLength,
-      finalMonthly: final.toFixed(2),
-      selectedServices
-    });
-
     try {
       const response = await fetch('/.netlify/functions/create-docusign-envelope', {
         method: 'POST',
@@ -633,11 +637,18 @@ const BundleBuilder = () => {
           bundleName: bundleName || 'My Bundle',
           subLength,
           finalMonthly: final.toFixed(2),
-          selectedServices
+          selectedServices,
+          clientName: formData.clientName,
+          clientEmail: formData.clientEmail,
+          clientPhone: formData.clientPhone,
+          clientAddress: formData.clientAddress,
+          clientCity: formData.clientCity,
+          clientState: formData.clientState,
+          clientZip: formData.clientZip,
+          clientCompany: formData.clientCompany,
+          marketingConsent: formData.marketingConsent
         })
       });
-      
-      console.log('DocuSign response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.text();
@@ -646,16 +657,17 @@ const BundleBuilder = () => {
       }
       
       const data = await response.json();
-      console.log('DocuSign response data:', data);
       
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert('Error generating contract. Please try again. No URL returned from DocuSign.');
+        alert('Error generating contract. No URL returned from DocuSign.');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert(`Error generating contract: ${error.message}. Please check the console for more details.`);
+      alert(`Error generating contract: ${error.message}. Please try again.`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -675,7 +687,7 @@ const BundleBuilder = () => {
         console.error("Error loading saved bundle:", e);
       }
     }
-  }, [products]); // Added products to the dependency array to fix the ESLint warning
+  }, []);
 
   // Save bundle data
   useEffect(() => {
@@ -903,33 +915,73 @@ const BundleBuilder = () => {
       {/* Purchase Modal */}
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121212] rounded-xl p-8 w-full max-w-md border border-[#FFBA38]/20">
-            <h2 className="text-2xl font-bold text-[#F8F6F0] mb-6">Finalize Your Bundle</h2>
-            <input
-              type="text"
-              placeholder="Bundle Name (Optional)"
-              value={bundleName}
-              onChange={(e) => setBundleName(e.target.value)}
-              className="w-full p-4 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg mb-6 text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
-            />
-            <div className="text-center mb-8">
-              <div className="text-4xl font-bold text-[#FFBA38] mb-2">${final.toFixed(2)}/month</div>
-              <div className="text-sm text-[#F8F6F0]/70">Total monthly savings: ${totalSaved.toFixed(2)}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setShowPurchaseModal(false)}
-                className="py-3 bg-[#2A2A2A] text-[#F8F6F0]/70 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={openDocuSignModal}
-                className="py-3 bg-[#FFBA38] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#D4941E] transition-colors"
-              >
-                Complete Purchase
-              </button>
-            </div>
+          <div className="bg-[#121212] rounded-xl p-8 w-full max-w-md md:max-w-2xl border border-[#FFBA38]/20 max-h-[90vh] overflow-y-auto">
+            {formStep === 0 ? (
+              // Step 1: Bundle Confirmation
+              <>
+                <h2 className="text-2xl font-bold text-[#F8F6F0] mb-6">Finalize Your Bundle</h2>
+                <input
+                  type="text"
+                  placeholder="Bundle Name (Optional)"
+                  value={bundleName}
+                  onChange={(e) => setBundleName(e.target.value)}
+                  className="w-full p-4 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg mb-6 text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
+                />
+                
+                <div className="p-4 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg mb-6">
+                  <h3 className="font-medium text-[#FFBA38] mb-3">Selected Services</h3>
+                  <ul className="space-y-2">
+                    {selected.map(([product, tier]) => (
+                      <li key={product} className="flex justify-between items-center">
+                        <span className="text-[#F8F6F0]">{product}</span>
+                        <span className="text-[#F8F6F0]/70">{tier}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 pt-3 border-t border-[#FFBA38]/10">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#F8F6F0]/70">Subscription Length</span>
+                      <span className="text-[#F8F6F0]">{subLength} months</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center mb-8">
+                  <div className="text-4xl font-bold text-[#FFBA38] mb-2">${final.toFixed(2)}/month</div>
+                  <div className="text-sm text-[#F8F6F0]/70">Total monthly savings: ${totalSaved.toFixed(2)}</div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setShowPurchaseModal(false)}
+                    className="py-3 bg-[#2A2A2A] text-[#F8F6F0]/70 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBundleConfirm}
+                    className="py-3 bg-[#FFBA38] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#D4941E] transition-colors"
+                  >
+                    Approve Bundle
+                  </button>
+                </div>
+              </>
+            ) : (
+              // Step 2: User Information Form
+              <>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-16 h-16 border-4 border-[#FFBA38] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-[#F8F6F0] text-lg">Generating your agreement...</p>
+                  </div>
+                ) : (
+                  <UserInfoForm 
+                    onSubmit={handleUserInfoSubmit} 
+                    onCancel={() => setFormStep(0)} 
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
