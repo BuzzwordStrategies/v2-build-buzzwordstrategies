@@ -6,8 +6,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
+  console.log('Starting save-agreement handler');
+  
   try {
     const data = JSON.parse(event.body);
+    console.log('Received data:', JSON.stringify(data, null, 2));
+    
     const { 
       bundleID, 
       bundleName, 
@@ -19,6 +23,7 @@ exports.handler = async (event) => {
     } = data;
 
     // Save to Supabase
+    console.log('Saving agreement data to Supabase...');
     const saveResult = await saveToSupabase({
       bundleID,
       bundleName,
@@ -39,24 +44,40 @@ exports.handler = async (event) => {
       agreementDate: agreementInfo.agreementDate,
       status: 'agreement_signed'
     });
+    
+    console.log('Supabase save result:', saveResult);
 
-    // Create Stripe checkout session
-    const stripe_checkout_url = `https://ephemeral-moonbeam-0a8703.netlify.app/.netlify/functions/create-stripe-checkout?bundleID=${encodeURIComponent(bundleID)}&bundleName=${encodeURIComponent(bundleName || "My Bundle")}&finalMonthly=${encodeURIComponent(finalMonthly)}&subLength=${encodeURIComponent(subLength)}&selectedServices=${encodeURIComponent(selectedServices || "No services selected")}`;
+    // Create redirect URL to Stripe checkout
+    console.log('Creating Stripe checkout URL...');
+    const queryParams = new URLSearchParams({
+      bundleID: bundleID,
+      bundleName: bundleName || "My Bundle",
+      finalMonthly: finalMonthly,
+      subLength: subLength,
+      selectedServices: selectedServices || "No services selected"
+    }).toString();
+    
+    const stripe_checkout_url = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+    console.log('Stripe checkout URL:', stripe_checkout_url);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ 
         success: true,
+        message: "Agreement successfully saved",
         redirectUrl: stripe_checkout_url
       })
     };
   } catch (error) {
-    console.error('Error saving agreement:', error.message);
+    console.error('Error saving agreement:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Failed to save agreement',
-        details: error.message
+        message: error.message,
+        details: error.response?.data || error.stack
       })
     };
   }
@@ -64,13 +85,15 @@ exports.handler = async (event) => {
 
 // Function to save data to Supabase
 async function saveToSupabase(data) {
+  console.log('Starting saveToSupabase function');
+  
   try {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
     
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       console.warn('Supabase credentials not found, skipping database save');
-      return;
+      return { status: 'skipped', reason: 'missing_credentials' };
     }
     
     // Format the data for Supabase
@@ -94,6 +117,9 @@ async function saveToSupabase(data) {
       updated_at: new Date().toISOString()
     };
     
+    console.log('Sending data to Supabase:', JSON.stringify(orderData, null, 2));
+    console.log('Supabase URL:', SUPABASE_URL);
+    
     const response = await axios.post(
       `${SUPABASE_URL}/rest/v1/pending_orders`,
       orderData,
@@ -107,10 +133,23 @@ async function saveToSupabase(data) {
       }
     );
     
-    console.log('Order data saved to Supabase successfully:', response.data);
-    return response.data;
+    console.log('Supabase API response status:', response.status);
+    console.log('Supabase API response data:', JSON.stringify(response.data, null, 2));
+    
+    return {
+      status: 'success',
+      data: response.data
+    };
   } catch (error) {
-    console.error('Error saving to Supabase:', error.response?.data || error.message);
-    throw error;
+    console.error('Error in saveToSupabase function:', error);
+    console.error('Error response:', error.response?.data);
+    console.error('Error message:', error.message);
+    
+    throw {
+      status: 'error',
+      message: error.message,
+      response: error.response?.data,
+      stack: error.stack
+    };
   }
 }
