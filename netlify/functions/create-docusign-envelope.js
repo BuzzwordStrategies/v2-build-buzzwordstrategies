@@ -703,39 +703,36 @@ async function saveToSupabase(data) {
       return;
     }
     
-    // Format the data for Supabase insertion
-    const envelopeData = {
-      envelope_id: data.envelopeId,
+    // Format the data to match your pending_orders table structure
+    const orderData = {
       bundle_id: data.bundleID,
       bundle_name: data.bundleName,
-      subscription_length: data.subLength,
-      monthly_fee: data.finalMonthly,
+      sub_length: parseInt(data.subLength), // Ensure this is an integer
+      final_monthly: parseFloat(data.finalMonthly), // Ensure this is numeric
       selected_services: data.selectedServices,
-      client_email: data.clientEmail,
-      client_name: data.clientName,
-      client_address: data.clientAddress || null,
-      client_city: data.clientCity || null,
-      client_state: data.clientState || null,
-      client_zip: data.clientZip || null,
-      client_phone: data.clientPhone || null,
+      customer_email: data.clientEmail,
+      customer_name: data.clientName,
       status: data.status || 'sent',
-      created_at: new Date().toISOString()
+      docusign_envelope_id: data.envelopeId,
+      // Note: stripe_session_id will be added later when Stripe checkout is created
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
     const response = await axios.post(
-      `${SUPABASE_URL}/rest/v1/contracts`,  // Update table name to match your Supabase setup
-      envelopeData,
+      `${SUPABASE_URL}/rest/v1/pending_orders`,
+      orderData,
       {
         headers: {
           'apikey': SUPABASE_SERVICE_KEY,
           'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=representation'  // Return the inserted row
+          'Prefer': 'return=representation'
         }
       }
     );
     
-    console.log('Data saved to Supabase successfully:', response.data);
+    console.log('Order data saved to Supabase successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error saving to Supabase:', error.response?.data || error.message);
