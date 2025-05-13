@@ -39,21 +39,26 @@ exports.handler = async (event) => {
         tabs: {
           textTabs: [
             {
-              tabLabel: "BundleName",
-              value: bundleName
+              tabLabel: "bundleID",
+              value: bundleID
             },
             {
-              tabLabel: "SubscriptionLength",
+              tabLabel: "subLength",
               value: subLength.toString()
             },
             {
-              tabLabel: "MonthlyPrice",
+              tabLabel: "finalMonthly",
               value: finalMonthly.toString()
             },
             {
-              tabLabel: "SelectedServices",
+              tabLabel: "bundleName",
+              value: bundleName
+            },
+            {
+              tabLabel: "selectedServices",
               value: selectedServices
             }
+            // Note: agencySignature and agencySignDate will be filled by the agency representative
           ]
         }
       }],
