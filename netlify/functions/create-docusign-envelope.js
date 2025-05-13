@@ -25,44 +25,42 @@ exports.handler = async (event) => {
       DOCUSIGN_PRIVATE_KEY
     );
 
-    // Create the envelope
+    console.log('JWT token obtained successfully');
+
+    // Create envelope from template
     const envelopeDefinition = {
       emailSubject: `Buzzword Strategies Bundle Agreement - ${bundleName}`,
-      documents: [{
-        documentBase64: await createContractPDF(bundleName, subLength, finalMonthly, selectedServices),
-        name: 'Bundle Agreement',
-        fileExtension: 'pdf',
-        documentId: '1'
+      templateId: "ca675320-b73c-4d59-9b15-b7c071ffd196",
+      templateRoles: [{
+        email: clientEmail || 'client@example.com',
+        name: clientName || 'Client Name',
+        roleName: "Signer",
+        clientUserId: "1", // For embedded signing
+        tabs: {
+          textTabs: [
+            {
+              tabLabel: "BundleName",
+              value: bundleName
+            },
+            {
+              tabLabel: "SubscriptionLength",
+              value: subLength.toString()
+            },
+            {
+              tabLabel: "MonthlyPrice",
+              value: finalMonthly.toString()
+            },
+            {
+              tabLabel: "SelectedServices",
+              value: selectedServices
+            }
+          ]
+        }
       }],
-      recipients: {
-        signers: [{
-          email: clientEmail || 'client@example.com',
-          name: clientName || 'Client Name',
-          recipientId: '1',
-          routingOrder: '1',
-          clientUserId: '1', // This enables embedded signing
-          tabs: {
-            signHereTabs: [{
-              documentId: '1',
-              pageNumber: '1',
-              recipientId: '1',
-              tabLabel: 'SignHere',
-              xPosition: '100',
-              yPosition: '500'
-            }],
-            dateSignedTabs: [{
-              documentId: '1',
-              pageNumber: '1',
-              recipientId: '1',
-              tabLabel: 'DateSigned',
-              xPosition: '300',
-              yPosition: '500'
-            }]
-          }
-        }]
-      },
-      status: 'sent'
+      status: "sent"
     };
+
+    console.log('Sending envelope definition:', JSON.stringify(envelopeDefinition));
 
     // Send the envelope
     const response = await axios.post(
@@ -76,14 +74,16 @@ exports.handler = async (event) => {
       }
     );
 
+    console.log('Envelope created successfully:', response.data.envelopeId);
+
     // Get the signing URL for embedded signing
     const envelopeId = response.data.envelopeId;
     const viewRequest = {
-      returnUrl: 'https://build.buzzwordstrategies.com/thank-you',
+      returnUrl: 'https://ephemeral-moonbeam-0a8703.netlify.app/thank-you',
       authenticationMethod: 'none',
       email: clientEmail || 'client@example.com',
       userName: clientName || 'Client Name',
-      clientUserId: '1'
+      clientUserId: "1"
     };
 
     const signingUrlResponse = await axios.post(
@@ -104,9 +104,14 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('Error creating DocuSign envelope:', error.response?.data || error.message);
+    console.error('Full error:', JSON.stringify(error, null, 2));
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to create DocuSign envelope', details: error.message })
+      body: JSON.stringify({ 
+        error: 'Failed to create DocuSign envelope', 
+        details: error.message,
+        responseData: error.response?.data
+      })
     };
   }
 };
@@ -147,44 +152,4 @@ async function getJWTToken(clientId, userId, privateKey) {
     console.error('JWT token exchange failed:', error.response?.data || error.message);
     throw error;
   }
-}
-
-async function createContractPDF(bundleName, subLength, finalMonthly, selectedServices) {
-  // This is a simple text-based PDF for now
-  // You might want to use a library like PDFKit for better formatting
-  const pdfContent = `
-BUZZWORD STRATEGIES BUNDLE AGREEMENT
-
-Bundle Details:
---------------
-Bundle Name: ${bundleName}
-Subscription Length: ${subLength} months
-Monthly Cost: $${finalMonthly}
-
-Selected Services:
------------------
-${selectedServices}
-
-Terms and Conditions:
---------------------
-1. This agreement is for a ${subLength}-month subscription term.
-2. The monthly fee of $${finalMonthly} will be charged monthly.
-3. Services will begin upon contract execution.
-4. Either party may terminate with 30 days written notice after the initial term.
-
-By signing below, you agree to these terms.
-
-_______________________________     _______________
-Client Signature                    Date
-
-_______________________________     
-Client Name (Print)
-
-
-_______________________________     _______________
-Buzzword Strategies Representative  Date
-`;
-
-  // Convert to base64
-  return Buffer.from(pdfContent).toString('base64');
 }
