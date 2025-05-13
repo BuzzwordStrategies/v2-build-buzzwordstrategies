@@ -5,39 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thank You - Redirecting to Payment</title>
   <script>
-    // Function to get URL parameters
-    function getUrlParams() {
-      const params = {};
-      const queryString = window.location.search.substring(1);
-      const pairs = queryString.split('&');
-      
-      for (const pair of pairs) {
-        const [key, value] = pair.split('=');
-        params[decodeURIComponent(key)] = decodeURIComponent(value || '');
-      }
-      
-      return params;
-    }
-
-    // Redirect to Stripe checkout with the parameters
     window.onload = function() {
-      const params = getUrlParams();
-      
-      // Log the parameters for debugging
-      console.log("Redirecting to Stripe with parameters:", params);
-      
-      // You can replace this URL with your actual Stripe checkout URL
-      // The URL should be your Stripe checkout or an endpoint that initiates Stripe checkout
-      const stripeUrl = `https://your-stripe-checkout-url?bundleID=${params.bundleID}&bundleName=${params.bundleName}&finalMonthly=${params.finalMonthly}&subLength=${params.subLength}&selectedServices=${params.selectedServices}`;
-      
-      // Optional: Display a message while redirecting
-      document.getElementById('redirect-message').innerHTML = 
-        `Thank you for signing! Redirecting to payment for ${params.bundleName}...`;
-      
-      // Redirect after a short delay
-      setTimeout(() => {
-        window.location.href = stripeUrl;
-      }, 2000);
+      // Just redirect directly to our Netlify function with all params
+      window.location.href = `/.netlify/functions/create-stripe-checkout${window.location.search}`;
     }
   </script>
   <style>
@@ -47,23 +17,29 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f5f5f5;
+      background-color: #1A1A1A;
+      color: white;
       margin: 0;
     }
     .container {
       text-align: center;
       padding: 40px;
-      background-color: white;
+      background-color: #2A2A2A;
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       max-width: 600px;
+      border: 1px solid #FFBA38;
     }
     h1 {
-      color: #333;
+      color: #FFBA38;
+    }
+    p {
+      color: #F8F6F0;
+      line-height: 1.6;
     }
     .loader {
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #3498db;
+      border: 5px solid #2A2A2A;
+      border-top: 5px solid #FFBA38;
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -78,8 +54,8 @@
 </head>
 <body>
   <div class="container">
-    <h1>Thank You!</h1>
-    <p id="redirect-message">Document signed successfully! Redirecting to payment...</p>
+    <h1>Agreement Signed Successfully!</h1>
+    <p>Redirecting to payment...</p>
     <div class="loader"></div>
   </div>
 </body>
