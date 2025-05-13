@@ -58,7 +58,7 @@ exports.handler = async (event) => {
         }
       }
 
-      // Create envelope from template
+      // Create envelope from template using template custom fields
       const envelopeDefinition = {
         emailSubject: `Buzzword Strategies Bundle Agreement - ${bundleName}`,
         templateId: "ca675320-b73c-4d59-9b15-b7c071ffd196",
@@ -66,34 +66,36 @@ exports.handler = async (event) => {
           email: clientEmail || 'client@example.com',
           name: clientName || 'Client Name',
           roleName: "Signer",
-          clientUserId: "1", // For embedded signing
-          tabs: {
-            textTabs: [
-              {
-                tabLabel: "bundleID",
-                value: bundleID
-              },
-              {
-                tabLabel: "subLength",
-                value: subLength.toString()
-              },
-              {
-                tabLabel: "finalMonthly",
-                value: finalMonthly.toString()
-              },
-              {
-                tabLabel: "bundleName",
-                value: bundleName
-              },
-              {
-                tabLabel: "selectedServices",
-                value: selectedServices
-              }
-            ]
-          }
+          clientUserId: "1" // For embedded signing
         }],
-        status: "sent"
+        status: "sent",
+        customFields: {
+          textCustomFields: [
+            {
+              name: "bundleID",
+              value: bundleID || "BWB-" + Date.now()
+            },
+            {
+              name: "bundleName", 
+              value: bundleName || "My Bundle"
+            },
+            {
+              name: "subLength",
+              value: subLength.toString()
+            },
+            {
+              name: "finalMonthly", 
+              value: finalMonthly.toString()
+            },
+            {
+              name: "selectedServices",
+              value: selectedServices || "No services selected"
+            }
+          ]
+        }
       };
+
+      console.log('Sending envelope definition with template variables:', JSON.stringify(envelopeDefinition));
 
       // Send the envelope
       const response = await axios.post(
@@ -106,6 +108,8 @@ exports.handler = async (event) => {
           }
         }
       );
+
+      console.log('Envelope created successfully:', response.data.envelopeId);
 
       // Get the signing URL for embedded signing
       const envelopeId = response.data.envelopeId;
@@ -135,6 +139,7 @@ exports.handler = async (event) => {
 
     } catch (error) {
       console.error('Error creating DocuSign envelope:', error.response?.data || error.message);
+      console.error('Full error details:', JSON.stringify(error.response?.data || error.message, null, 2));
       
       // Check if the error is consent_required
       if (error.response?.data?.error === 'consent_required') {
