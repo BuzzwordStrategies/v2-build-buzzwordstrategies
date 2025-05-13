@@ -8,7 +8,22 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { bundleID, bundleName, subLength, finalMonthly, selectedServices, clientEmail, clientName, clientAddress, clientCity, clientState, clientZip, clientPhone } = JSON.parse(event.body);
+    const { 
+      bundleID, 
+      bundleName, 
+      subLength, 
+      finalMonthly, 
+      selectedServices, 
+      clientName, 
+      clientEmail, 
+      clientPhone, 
+      clientAddress, 
+      clientCity, 
+      clientState, 
+      clientZip,
+      clientCompany,
+      marketingConsent
+    } = JSON.parse(event.body);
 
     // DocuSign credentials
     const DOCUSIGN_INTEGRATION_KEY = process.env.DOCUSIGN_INTEGRATION_KEY;
@@ -28,7 +43,7 @@ exports.handler = async (event) => {
       DOCUSIGN_PRIVATE_KEY
     );
 
-    // Set up stripe checkout URL
+    // Direct link to Stripe checkout
     const stripe_checkout_url = `https://ephemeral-moonbeam-0a8703.netlify.app/.netlify/functions/create-stripe-checkout?bundleID=${encodeURIComponent(finalBundleID)}&bundleName=${encodeURIComponent(bundleName || "My Bundle")}&finalMonthly=${encodeURIComponent(finalMonthly)}&subLength=${encodeURIComponent(subLength)}&selectedServices=${encodeURIComponent(selectedServices || "No services selected")}`;
 
     // Create envelope definition using template
@@ -37,8 +52,8 @@ exports.handler = async (event) => {
       templateId: DOCUSIGN_TEMPLATE_ID,
       templateRoles: [
         {
-          email: clientEmail || 'client@example.com',
-          name: clientName || 'Client Name',
+          email: clientEmail,
+          name: clientName,
           roleName: "Client",
           clientUserId: "1", // For embedded signing
           tabs: {
@@ -55,6 +70,7 @@ exports.handler = async (event) => {
               { tabLabel: "clientState", value: clientState || "" },
               { tabLabel: "clientZip", value: clientZip || "" },
               { tabLabel: "clientPhone", value: clientPhone || "" },
+              { tabLabel: "clientCompany", value: clientCompany || "" },
               { tabLabel: "currentDate", value: new Date().toLocaleDateString() }
             ]
           }
@@ -90,15 +106,55 @@ exports.handler = async (event) => {
       selectedServices,
       clientEmail,
       clientName,
+      clientAddress,
+      clientCity,
+      clientState,
+      clientZip,
+      clientPhone,
+      clientCompany,
+      marketingConsent,
       status: "pending_signature"
     });
+
+    // Also save to Google Sheets
+    try {
+      await axios.post(
+        '/.netlify/functions/save-to-google-sheets',
+        {
+          bundleID: finalBundleID,
+          bundleName,
+          subLength,
+          finalMonthly,
+          selectedServices,
+          clientName,
+          clientEmail,
+          clientPhone,
+          clientAddress,
+          clientCity,
+          clientState,
+          clientZip,
+          clientCompany,
+          marketingConsent,
+          status: "pending_signature",
+          docusignEnvelopeId: envelopeId
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('Data saved to Google Sheets');
+    } catch (error) {
+      console.error('Failed to save to Google Sheets, continuing anyway:', error.message);
+    }
 
     // Get the signing URL for embedded signing
     const viewRequest = {
       returnUrl: stripe_checkout_url,
       authenticationMethod: 'none',
-      email: clientEmail || 'client@example.com',
-      userName: clientName || 'Client Name',
+      email: clientEmail,
+      userName: clientName,
       clientUserId: "1"
     };
 
@@ -184,6 +240,10 @@ async function saveToSupabase(data) {
       selected_services: data.selectedServices,
       customer_email: data.clientEmail,
       customer_name: data.clientName,
+      customer_address: `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}`,
+      customer_phone: data.clientPhone,
+      customer_company: data.clientCompany,
+      marketing_consent: data.marketingConsent,
       status: data.status || 'pending_signature',
       docusign_envelope_id: data.envelopeId,
       created_at: new Date().toISOString(),
