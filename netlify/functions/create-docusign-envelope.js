@@ -3,7 +3,6 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
 exports.handler = async (event) => {
-  // Only handle POST requests
   if (event.httpMethod !== 'POST') {
     return { 
       statusCode: 405, 
@@ -14,7 +13,7 @@ exports.handler = async (event) => {
   try {
     const { bundleID, bundleName, subLength, finalMonthly, selectedServices, clientEmail, clientName } = JSON.parse(event.body);
 
-    // DocuSign credentials from environment variables
+    // DocuSign credentials
     const DOCUSIGN_INTEGRATION_KEY = process.env.DOCUSIGN_INTEGRATION_KEY;
     const DOCUSIGN_USER_ID = process.env.DOCUSIGN_USER_ID;
     const DOCUSIGN_ACCOUNT_ID = process.env.DOCUSIGN_ACCOUNT_ID;
@@ -34,7 +33,7 @@ exports.handler = async (event) => {
     // Direct link to Stripe checkout
     const stripe_checkout_url = `https://ephemeral-moonbeam-0a8703.netlify.app/.netlify/functions/create-stripe-checkout?bundleID=${encodeURIComponent(finalBundleID)}&bundleName=${encodeURIComponent(bundleName || "My Bundle")}&finalMonthly=${encodeURIComponent(finalMonthly)}&subLength=${encodeURIComponent(subLength)}&selectedServices=${encodeURIComponent(selectedServices || "No services selected")}`;
 
-    // Create envelope using a different approach
+    // Try another approach with explicit tab positions
     const envelopeDefinition = {
       emailSubject: `Buzzword Strategies Bundle Agreement - ${bundleName}`,
       templateId: "ca675320-b73c-4d59-9b15-b7c071ffd196",
@@ -45,41 +44,47 @@ exports.handler = async (event) => {
         clientUserId: "1", // For embedded signing
         tabs: {
           textTabs: [
+            // Use explicit positioning instead of relying on tab labels
             {
-              tabLabel: "bundleID",
+              tabLabel: "bundleID", 
               value: finalBundleID,
-              locked: "true",
-              tabId: "bundleID"
+              bold: "true",
+              fontSize: "size12",
+              required: "false"
             },
             {
-              tabLabel: "bundleName", 
+              tabLabel: "bundleName",
               value: bundleName || "My Bundle",
-              locked: "true",
-              tabId: "bundleName"
+              bold: "true",
+              fontSize: "size12",
+              required: "false"
             },
             {
               tabLabel: "subLength",
               value: subLength.toString(),
-              locked: "true",
-              tabId: "subLength"
+              bold: "true",
+              fontSize: "size12",
+              required: "false"
             },
             {
-              tabLabel: "finalMonthly", 
+              tabLabel: "finalMonthly",
               value: finalMonthly.toString(),
-              locked: "true",
-              tabId: "finalMonthly"
+              bold: "true",
+              fontSize: "size12",
+              required: "false"
             },
             {
               tabLabel: "selectedServices",
               value: selectedServices || "No services selected",
-              locked: "true",
-              tabId: "selectedServices"
+              required: "false"
             }
           ]
         }
       }],
       status: "sent"
     };
+
+    console.log("Sending envelope definition with template roles:", JSON.stringify(envelopeDefinition, null, 2));
 
     // Send the envelope
     const response = await axios.post(
@@ -92,6 +97,8 @@ exports.handler = async (event) => {
         }
       }
     );
+
+    console.log("DocuSign envelope created:", response.data.envelopeId);
 
     // Get the signing URL for embedded signing
     const envelopeId = response.data.envelopeId;
@@ -120,13 +127,13 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    console.error('Error creating DocuSign envelope:', error);
+    console.error('Error creating DocuSign envelope:', error.response?.data || error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Failed to create DocuSign envelope', 
         details: error.message,
-        stack: error.stack
+        response: error.response?.data
       })
     };
   }
