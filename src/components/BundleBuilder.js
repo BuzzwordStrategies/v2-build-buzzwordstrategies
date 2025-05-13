@@ -1,5 +1,7 @@
+// src/components/BundleBuilder.js
 import React, { useState, useEffect } from 'react';
 import UserInfoForm from './UserInfoForm';
+import ContractAgreementForm from './ContractAgreementForm';
 
 // Move products array outside component to avoid re-creation on each render
 const products = [
@@ -546,9 +548,11 @@ const BundleBuilder = () => {
   const [selectedBusiness, setSelectedBusiness] = useState('');
   
   // Form step state variables
-  const [formStep, setFormStep] = useState(0); // 0: bundle confirmation, 1: user info
+  const [formStep, setFormStep] = useState(0); // 0: bundle confirmation, 1: user info, 2: contract agreement
   const [userInfo, setUserInfo] = useState(null);
+  const [agreementInfo, setAgreementInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [bundleRejected, setBundleRejected] = useState(false);
 
   // Calculate discounts
   const getSubscriptionDiscount = (months) => {
@@ -614,11 +618,23 @@ const BundleBuilder = () => {
 
   // Form submission handlers
   const handleBundleConfirm = () => {
+    setBundleRejected(false); // Reset if previously rejected
     setFormStep(1);
   };
 
-  const handleUserInfoSubmit = async (formData) => {
+  const handleBundleReject = () => {
+    setBundleRejected(true);
+    setShowPurchaseModal(false);
+    // You could log this rejection to Supabase here
+  };
+
+  const handleUserInfoSubmit = (formData) => {
     setUserInfo(formData);
+    setFormStep(2); // Move to contract agreement
+  };
+
+  const handleAgreementSubmit = async (agreementData) => {
+    setAgreementInfo(agreementData);
     setIsLoading(true);
     
     const bundleID = "bwb-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
@@ -629,7 +645,7 @@ const BundleBuilder = () => {
       .join(', ');
     
     try {
-      const response = await fetch('/.netlify/functions/create-docusign-envelope', {
+      const response = await fetch('/.netlify/functions/save-agreement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -638,34 +654,27 @@ const BundleBuilder = () => {
           subLength,
           finalMonthly: final.toFixed(2),
           selectedServices,
-          clientName: formData.clientName,
-          clientEmail: formData.clientEmail,
-          clientPhone: formData.clientPhone,
-          clientAddress: formData.clientAddress,
-          clientCity: formData.clientCity,
-          clientState: formData.clientState,
-          clientZip: formData.clientZip,
-          clientCompany: formData.clientCompany,
-          marketingConsent: formData.marketingConsent
+          userInfo: userInfo,
+          agreementInfo: agreementData
         })
       });
       
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('DocuSign error response:', errorData);
+        console.error('Error response:', errorData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
       
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
       } else {
-        alert('Error generating contract. No URL returned from DocuSign.');
+        alert('Error processing your request. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert(`Error generating contract: ${error.message}. Please try again.`);
+      alert(`Error: ${error.message}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -953,10 +962,10 @@ const BundleBuilder = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={() => setShowPurchaseModal(false)}
+                    onClick={handleBundleReject}
                     className="py-3 bg-[#2A2A2A] text-[#F8F6F0]/70 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
                   >
-                    Cancel
+                    Reject Bundle
                   </button>
                   <button
                     onClick={handleBundleConfirm}
@@ -966,18 +975,32 @@ const BundleBuilder = () => {
                   </button>
                 </div>
               </>
-            ) : (
+            ) : formStep === 1 ? (
               // Step 2: User Information Form
+              <UserInfoForm 
+                onSubmit={handleUserInfoSubmit} 
+                onCancel={() => setFormStep(0)} 
+              />
+            ) : (
+              // Step 3: Contract Agreement
               <>
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="w-16 h-16 border-4 border-[#FFBA38] border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-[#F8F6F0] text-lg">Generating your agreement...</p>
+                    <p className="text-[#F8F6F0] text-lg">Processing your agreement...</p>
                   </div>
                 ) : (
-                  <UserInfoForm 
-                    onSubmit={handleUserInfoSubmit} 
-                    onCancel={() => setFormStep(0)} 
+                  <ContractAgreementForm 
+                    onSubmit={handleAgreementSubmit}
+                    onCancel={() => setFormStep(1)}
+                    bundleName={bundleName}
+                    selectedServices={Object.entries(selectedTiers)
+                      .filter(([, tier]) => tier)
+                      .map(([product, tier]) => `${product}: ${tier}`)
+                      .join(', ')}
+                    clientName={userInfo?.clientName || ''}
+                    subLength={subLength}
+                    finalMonthly={final.toFixed(2)}
                   />
                 )}
               </>
@@ -1037,6 +1060,31 @@ const BundleBuilder = () => {
         </div>
       )}
 
+      {/* Bundle Rejection Notification */}
+      {bundleRejected && (
+        <div className="fixed bottom-4 right-4 bg-[#2A2A2A] border border-red-500 p-4 rounded-lg shadow-lg max-w-xs animate-fade-in">
+          <div className="flex items-start gap-3">
+            <div className="text-red-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="text-[#F8F6F0] font-medium text-sm">Bundle Rejected</h4>
+              <p className="text-[#F8F6F0]/70 text-xs mt-1">Your bundle has been rejected. You can continue building your bundle.</p>
+            </div>
+            <button 
+              onClick={() => setBundleRejected(false)}
+              className="text-[#F8F6F0]/40 hover:text-[#F8F6F0] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Luxury Professional Styles */}
       <style jsx>{`
         /* Slider styling */
@@ -1076,6 +1124,16 @@ const BundleBuilder = () => {
         
         ::-webkit-scrollbar-thumb:hover {
           background: #D4941E;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out forwards;
         }
       `}</style>
     </div>
