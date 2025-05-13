@@ -1,10 +1,11 @@
 // netlify/functions/create-stripe-checkout.js
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const axios = require('axios');
 
 exports.handler = async (event) => {
   // Get parameters from query string directly
   const params = event.queryStringParameters || {};
-  const { bundleName, finalMonthly, subLength, selectedServices } = params;
+  const { bundleID, bundleName, finalMonthly, subLength, selectedServices } = params;
   
   try {
     // Create a simple Stripe checkout session
@@ -27,9 +28,37 @@ exports.handler = async (event) => {
         },
       ],
       mode: 'subscription',
-      success_url: 'https://ephemeral-moonbeam-0a8703.netlify.app/success',
+      success_url: `https://ephemeral-moonbeam-0a8703.netlify.app/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${bundleID}`,
       cancel_url: 'https://ephemeral-moonbeam-0a8703.netlify.app/cancel',
     });
+
+    // Save the Stripe session ID to Supabase
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+      
+      if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+        await axios.patch(
+          `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${bundleID}`,
+          {
+            stripe_session_id: session.id,
+            updated_at: new Date().toISOString()
+          },
+          {
+            headers: {
+              'apikey': SUPABASE_SERVICE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            }
+          }
+        );
+        console.log('Stripe session ID saved to Supabase');
+      }
+    } catch (dbError) {
+      console.error('Error updating Supabase with Stripe session ID:', dbError);
+      // Continue even if there's an error with the database
+    }
 
     // Redirect directly to Stripe
     return {
