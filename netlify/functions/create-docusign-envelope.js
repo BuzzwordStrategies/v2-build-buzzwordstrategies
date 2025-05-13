@@ -116,39 +116,6 @@ exports.handler = async (event) => {
       status: "pending_signature"
     });
 
-    // Also save to Google Sheets
-    try {
-      await axios.post(
-        '/.netlify/functions/save-to-google-sheets',
-        {
-          bundleID: finalBundleID,
-          bundleName,
-          subLength,
-          finalMonthly,
-          selectedServices,
-          clientName,
-          clientEmail,
-          clientPhone,
-          clientAddress,
-          clientCity,
-          clientState,
-          clientZip,
-          clientCompany,
-          marketingConsent,
-          status: "pending_signature",
-          docusignEnvelopeId: envelopeId
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      console.log('Data saved to Google Sheets');
-    } catch (error) {
-      console.error('Failed to save to Google Sheets, continuing anyway:', error.message);
-    }
-
     // Get the signing URL for embedded signing
     const viewRequest = {
       returnUrl: stripe_checkout_url,
@@ -242,7 +209,7 @@ async function saveToSupabase(data) {
       customer_name: data.clientName,
       customer_address: `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}`,
       customer_phone: data.clientPhone,
-      customer_company: data.clientCompany,
+      customer_company: data.clientCompany || '',
       marketing_consent: data.marketingConsent,
       status: data.status || 'pending_signature',
       docusign_envelope_id: data.envelopeId,
