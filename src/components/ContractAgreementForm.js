@@ -1,5 +1,5 @@
 // src/components/ContractAgreementForm.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ContractAgreementForm = ({ 
   onSubmit, 
@@ -13,31 +13,41 @@ const ContractAgreementForm = ({
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const [errors, setErrors] = useState({});
+  const [currentDate] = useState(new Date().toLocaleDateString());
   
-  const currentDate = new Date().toLocaleDateString();
+  // Clear errors when input changes
+  useEffect(() => {
+    setErrors({});
+  }, [agreeToTerms, signatureName]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const newErrors = {};
+    // Validate form
+    const validationErrors = {};
+    
     if (!agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms by checking the box';
-    }
-    if (!signatureName) {
-      newErrors.signatureName = 'Please type your full name to indicate agreement';
-    } else if (signatureName.toLowerCase() !== clientName.toLowerCase()) {
-      newErrors.signatureName = 'The name must match your full name exactly';
+      validationErrors.agreeToTerms = 'You must agree to the terms by checking the box';
     }
     
-    setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length === 0) {
-      onSubmit({
-        agreeToTerms,
-        signatureName,
-        agreementDate: currentDate
-      });
+    if (!signatureName.trim()) {
+      validationErrors.signatureName = 'Please type your full name to indicate agreement';
+    } else if (signatureName.trim().toLowerCase() !== clientName.toLowerCase()) {
+      validationErrors.signatureName = 'The name must match your full name exactly';
     }
+    
+    // If there are errors, show them and stop submission
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    // Submit the form data
+    onSubmit({
+      agreeToTerms,
+      signatureName,
+      agreementDate: currentDate
+    });
   };
 
   return (
@@ -45,6 +55,7 @@ const ContractAgreementForm = ({
       <h2 className="text-2xl font-bold text-[#F8F6F0] mb-4">Marketing Services Agreement</h2>
       <p className="text-sm text-[#F8F6F0]/70 mb-4">Please review and agree to the following terms.</p>
       
+      {/* Contract text in scrollable container */}
       <div className="bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg p-4 h-[400px] overflow-y-auto mb-4 text-sm text-[#F8F6F0]/90">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-[#FFBA38]">MARKETING SERVICES AGREEMENT</h3>
@@ -151,6 +162,7 @@ const ContractAgreementForm = ({
         </div>
       </div>
       
+      {/* Agreement checkbox */}
       <div className="space-y-3">
         <div className="flex items-start gap-2">
           <input
@@ -164,8 +176,11 @@ const ContractAgreementForm = ({
             I have read and agree to the Marketing Services Agreement above and agree to be bound by its terms.
           </label>
         </div>
-        {errors.agreeToTerms && <p className="text-red-500 text-xs">{errors.agreeToTerms}</p>}
+        {errors.agreeToTerms && (
+          <p className="text-red-500 text-xs ml-6">{errors.agreeToTerms}</p>
+        )}
         
+        {/* Signature field */}
         <div className="mt-4">
           <p className="text-sm text-[#F8F6F0]/80 mb-2">
             Type your full name below to indicate your agreement to these terms:
@@ -175,16 +190,22 @@ const ContractAgreementForm = ({
             value={signatureName}
             onChange={(e) => setSignatureName(e.target.value)}
             placeholder="Type your full name (as it appears above)"
-            className={`w-full p-3 bg-[#2A2A2A] border ${errors.signatureName ? 'border-red-500' : 'border-[#FFBA38]/20'} rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors`}
+            className={`w-full p-3 bg-[#2A2A2A] border ${
+              errors.signatureName ? 'border-red-500' : 'border-[#FFBA38]/20'
+            } rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors`}
           />
-          {errors.signatureName && <p className="text-red-500 text-xs mt-1">{errors.signatureName}</p>}
+          {errors.signatureName && (
+            <p className="text-red-500 text-xs mt-1">{errors.signatureName}</p>
+          )}
         </div>
         
+        {/* Legal notice */}
         <div className="text-sm text-[#F8F6F0]/60 mt-3">
           By typing your name above and clicking "Agree & Continue to Payment", you are electronically signing this agreement as of {currentDate}.
         </div>
       </div>
       
+      {/* Action buttons */}
       <div className="grid grid-cols-2 gap-4 mt-8">
         <button
           type="button"
