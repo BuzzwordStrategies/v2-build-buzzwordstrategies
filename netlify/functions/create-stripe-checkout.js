@@ -42,6 +42,7 @@ exports.handler = async (event) => {
           `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${bundleID}`,
           {
             stripe_session_id: session.id,
+            status: 'payment_pending',
             updated_at: new Date().toISOString()
           },
           {
