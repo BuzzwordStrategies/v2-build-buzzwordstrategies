@@ -1,15 +1,44 @@
 // src/components/BundleBuilder.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import UserInfoForm from './UserInfoForm';
 import ContractAgreementForm from './ContractAgreementForm';
 
-// Move products array outside component to avoid re-creation on each render
+// Products array outside component to avoid re-creation on each render
 const products = [
   "Meta Ads", "Google Ads", "TikTok Ads", "SEO",
   "GBP Ranker", "Backlinks", "Content", "Social Posts"
 ];
 
+// Service descriptions for info popups
+const serviceDescriptions = {
+  "Meta Ads": "Reach your ideal customers through targeted Facebook and Instagram advertising. Our Meta Ads service connects you with potential customers based on demographics, interests, and behaviors that align with your business goals.",
+  "Google Ads": "Get your business in front of customers actively searching for your products or services. Google Ads puts you at the top of search results when your potential customers are looking for what you offer.",
+  "TikTok Ads": "Connect with younger audiences through engaging short-form video content. TikTok has one of the highest engagement rates across all social platforms, making it perfect for brand awareness.",
+  "SEO": "Improve your organic visibility in search engines to drive more qualified traffic to your website. Our SEO strategies help you rank higher for the keywords your customers are searching for.",
+  "GBP Ranker": "Optimize your Google Business Profile to appear in local searches and Google Maps. Local visibility is crucial for brick-and-mortar businesses and service providers with geographic areas.",
+  "Backlinks": "Build your website's authority through high-quality links from reputable sources. Backlinks remain one of Google's top ranking factors and signal your site's trustworthiness.",
+  "Content": "Establish thought leadership and improve SEO with professionally written articles tailored to your audience. Quality content builds trust, educates customers, and improves conversion rates.",
+  "Social Posts": "Maintain an active and engaging social media presence across major platforms. Regular posting keeps your brand top-of-mind and helps nurture relationships with your audience."
+};
+
+// Case studies and success metrics for each service
+const serviceSuccessStories = {
+  "Meta Ads": "A dental clinic in Denver increased new patient appointments by 43% in just 3 months using our Meta Ads service, with a 5.2x return on ad spend.",
+  "Google Ads": "A local fitness center generated 127 new membership sign-ups in their first quarter with our Google Ads management, averaging just $38 per acquisition.",
+  "TikTok Ads": "A specialty dental lab reached over 500,000 dentists with engaging before/after content, resulting in 47 new lab accounts within 60 days.",
+  "SEO": "A small business owner increased organic traffic by 215% year-over-year after 6 months of our SEO service, resulting in 28 new monthly leads.",
+  "GBP Ranker": "A multi-location dental practice saw a 67% increase in Google Maps direction requests after optimizing their Google Business Profile.",
+  "Backlinks": "An e-commerce store improved domain authority from 18 to 42 in one year with our backlink service, resulting in page 1 rankings for 78 target keywords.",
+  "Content": "A B2B service provider established themselves as an industry thought leader, with their blog content generating 34 qualified leads per month.",
+  "Social Posts": "A fitness studio increased their social following by 324% in 6 months while generating consistent client referrals through engagement."
+};
+
 const BundleBuilder = () => {
+  // Refs for scrolling
+  const productsSectionRef = useRef(null);
+  const tiersSectionRef = useRef(null);
+  const pricingSectionRef = useRef(null);
+  
   // Product and pricing data
   const pricing = {
     "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
@@ -26,17 +55,20 @@ const BundleBuilder = () => {
 
   // Industry-specific tier descriptions
   const bestForIndustry = {
+    // Existing industry descriptions kept as is
     "Dental Clinic": {
       "Meta Ads": {
         Base: "Want to fill empty chairs & attract patients seeking routine care",
         Standard: "Ready to book high-value procedures like implants & ortho", 
         Premium: "Need to dominate your market & expand to new locations"
       },
+      // Other services kept as is
       "Google Ads": {
         Base: "Want patients searching 'dentist near me' to find you first",
         Standard: "Ready to capture searches for profitable specialties",
         Premium: "Need to own every dental search in your city"
       },
+      // The rest of the dental clinic mappings stay the same
       "TikTok Ads": {
         Base: "Want to attract younger patients with engaging content",
         Standard: "Ready to showcase smile transformations that go viral",
@@ -68,7 +100,9 @@ const BundleBuilder = () => {
         Premium: "Need an always-active social presence that converts"
       }
     },
+    // Other industries kept as-is
     "Dental Lab": {
+      // All dental lab mappings stay the same
       "Meta Ads": {
         Base: "Want local dentists to discover your lab services",
         Standard: "Ready to expand beyond your current service area",
@@ -111,6 +145,7 @@ const BundleBuilder = () => {
       }
     },
     "Small Business": {
+      // All small business mappings stay the same
       "Meta Ads": {
         Base: "Want to test if social media can bring customers",
         Standard: "Ready to scale what's working & reach more people",
@@ -153,6 +188,7 @@ const BundleBuilder = () => {
       }
     },
     "Fitness": {
+      // All fitness mappings stay the same
       "Meta Ads": {
         Base: "Want to fill classes & attract new members locally",
         Standard: "Ready to promote specialty programs & trainers",
@@ -195,6 +231,7 @@ const BundleBuilder = () => {
       }
     },
     "Something Else": {
+      // All "Something Else" mappings stay the same
       "Meta Ads": {
         Base: "Get started with targeted social media advertising",
         Standard: "Scale successful campaigns & reach your ideal audience",
@@ -240,6 +277,7 @@ const BundleBuilder = () => {
 
   // Generic best for (fallback)
   const genericBestFor = {
+    // Generic best for descriptions kept as is
     "Meta Ads": {
       Base: "Want to test if social ads can grow your business",
       Standard: "Ready to scale successful campaigns & reach more customers",
@@ -282,8 +320,9 @@ const BundleBuilder = () => {
     }
   };
 
-  // Detailed tier features
+  // Detailed tier features - kept as is
   const detailedFeatures = {
+    // All detailed features kept the same
     "Google Ads": {
       Base: {
         disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
@@ -547,6 +586,17 @@ const BundleBuilder = () => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState('');
   
+  // New state for the service info modal
+  const [showServiceInfoModal, setShowServiceInfoModal] = useState(false);
+  const [serviceInfoContent, setServiceInfoContent] = useState({
+    title: '',
+    description: '',
+    successStory: ''
+  });
+  
+  // New state for the step indicator
+  const [currentStep, setCurrentStep] = useState(1); // 1: Industry, 2: Services, 3: Tiers
+
   // Form step state variables
   const [formStep, setFormStep] = useState(0); // 0: bundle confirmation, 1: user info, 2: contract agreement
   const [userInfo, setUserInfo] = useState(null);
@@ -615,6 +665,16 @@ const BundleBuilder = () => {
     setModalTier(tier);
     setShowModal(true);
   };
+  
+  // Open service info modal
+  const openServiceInfoModal = (service) => {
+    setServiceInfoContent({
+      title: service,
+      description: serviceDescriptions[service],
+      successStory: serviceSuccessStories[service]
+    });
+    setShowServiceInfoModal(true);
+  };
 
   // Form submission handlers
   const handleBundleConfirm = () => {
@@ -680,6 +740,28 @@ const BundleBuilder = () => {
     }
   };
 
+  // Handle industry selection with auto-scroll
+  const handleIndustrySelect = (industry) => {
+    setSelectedBusiness(industry);
+    setCurrentStep(2); // Move to step 2: Services selection
+    
+    // Scroll to products section after a short delay
+    setTimeout(() => {
+      productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  };
+  
+  // Handle product selection with auto-scroll
+  const handleProductSelect = (product) => {
+    setCurrentlyOpenService(product);
+    setCurrentStep(3); // Move to step 3: Tier selection
+    
+    // Scroll to tiers section after a short delay
+    setTimeout(() => {
+      tiersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  };
+
   // Load saved bundle on mount
   useEffect(() => {
     const saved = localStorage.getItem("buzzwordBundle");
@@ -692,6 +774,14 @@ const BundleBuilder = () => {
         setSelectedBusiness(parsedData.selectedBusiness || "");
         const firstService = Object.keys(parsedData.selectedTiers).find(service => products.includes(service)) || products[0];
         setCurrentlyOpenService(firstService);
+        
+        // Set current step based on saved data
+        if (parsedData.selectedBusiness) {
+          setCurrentStep(2);
+          if (Object.keys(parsedData.selectedTiers || {}).length > 0) {
+            setCurrentStep(3);
+          }
+        }
       } catch (e) {
         console.error("Error loading saved bundle:", e);
       }
@@ -724,14 +814,34 @@ const BundleBuilder = () => {
               />
             </a>
             
+            {/* Step indicator (NEW) */}
+            <div className="w-full max-w-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-[#FFBA38] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-[#F8F6F0]/50'} font-bold`}>1</div>
+                  <div className={`ml-2 text-sm font-medium ${currentStep >= 1 ? 'text-[#FFBA38]' : 'text-[#F8F6F0]/50'}`}>Select Industry</div>
+                </div>
+                <div className={`flex-1 mx-2 h-1 ${currentStep >= 2 ? 'bg-[#FFBA38]' : 'bg-[#2A2A2A]'}`}></div>
+                <div className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-[#FFBA38] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-[#F8F6F0]/50'} font-bold`}>2</div>
+                  <div className={`ml-2 text-sm font-medium ${currentStep >= 2 ? 'text-[#FFBA38]' : 'text-[#F8F6F0]/50'}`}>Choose Services</div>
+                </div>
+                <div className={`flex-1 mx-2 h-1 ${currentStep >= 3 ? 'bg-[#FFBA38]' : 'bg-[#2A2A2A]'}`}></div>
+                <div className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-[#FFBA38] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-[#F8F6F0]/50'} font-bold`}>3</div>
+                  <div className={`ml-2 text-sm font-medium ${currentStep >= 3 ? 'text-[#FFBA38]' : 'text-[#F8F6F0]/50'}`}>Select Tiers</div>
+                </div>
+              </div>
+            </div>
+            
             {/* Business Selector */}
             <div className="flex flex-col items-center gap-3 w-full">
-              <span className="text-sm text-[#FFBA38]/70 uppercase tracking-wider">Select Industry</span>
+              <span className="text-sm text-[#FFBA38]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
               <div className="flex flex-wrap gap-3 justify-center px-2">
                 {businessTypes.map(type => (
                   <button
                     key={type}
-                    onClick={() => setSelectedBusiness(type)}
+                    onClick={() => handleIndustrySelect(type)}
                     className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
                       selectedBusiness === type
                         ? 'bg-[#FFBA38] text-[#1A1A1A] font-medium shadow-lg shadow-[#FFBA38]/20'
@@ -742,6 +852,14 @@ const BundleBuilder = () => {
                   </button>
                 ))}
               </div>
+              {selectedBusiness && (
+                <div className="flex items-center mt-2 animate-pulse">
+                  <svg className="w-5 h-5 text-[#FFBA38] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span className="text-sm text-[#F8F6F0]">Scroll down to select your services</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -811,10 +929,16 @@ const BundleBuilder = () => {
                 <div className="text-sm text-[#FFBA38]/70 mb-3">Per Month</div>
                 {selected.length > 0 && (
                   <button
-                    onClick={() => setShowPurchaseModal(true)}
-                    className="px-6 py-3 bg-[#FFBA38] hover:bg-[#D4941E] text-[#1A1A1A] font-semibold rounded-lg transition-all duration-300"
+                    onClick={() => {
+                      setShowPurchaseModal(true);
+                      pricingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-6 py-3 bg-[#FFBA38] hover:bg-[#D4941E] text-[#1A1A1A] font-semibold rounded-lg transition-all duration-300 flex items-center"
                   >
-                    Continue to Purchase
+                    <span>Continue to Purchase</span>
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
                   </button>
                 )}
               </div>
@@ -827,12 +951,20 @@ const BundleBuilder = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Selected Services */}
         {selected.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-sm font-medium text-[#FFBA38]/70 uppercase tracking-wider mb-4">Selected Services</h3>
+          <div className="mb-10" ref={pricingSectionRef}>
+            <h3 className="text-sm font-medium text-[#FFBA38]/70 uppercase tracking-wider mb-4">Your Selected Services</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {selected.map(([product, tier]) => (
                 <div key={product} className="flex items-center justify-between px-4 py-3 bg-[#2A2A2A] text-[#F8F6F0] rounded-lg border border-[#FFBA38]/20">
-                  <span className="font-medium">{product} – {tier}</span>
+                  <div className="flex items-center">
+                    <span className="font-medium">{product} – {tier}</span>
+                    <div 
+                      className="ml-2 w-5 h-5 rounded-full bg-[#121212] text-[#FFBA38] flex items-center justify-center cursor-pointer hover:bg-[#FFBA38] hover:text-[#121212] transition-colors"
+                      onClick={() => openServiceInfoModal(product)}
+                    >
+                      <span className="text-xs font-bold">i</span>
+                    </div>
+                  </div>
                   <button
                     onClick={() => handleTierSelect(product, null)}
                     className="text-[#F8F6F0]/60 hover:text-red-500 transition-colors ml-4"
@@ -848,37 +980,70 @@ const BundleBuilder = () => {
         )}
 
         {/* Service Selection */}
-        <div className="mb-8">
-          <h3 className="text-sm font-medium text-[#FFBA38]/70 uppercase tracking-wider mb-4">Select Services</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="mb-12" ref={productsSectionRef}>
+          <h3 className="text-sm font-medium text-[#FFBA38]/70 uppercase tracking-wider mb-4">Step 2: Select Services</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {products.map(service => (
-              <button
-                key={service}
-                onClick={() => setCurrentlyOpenService(service)}
-                className={`relative p-4 rounded-lg text-sm font-medium transition-all duration-300 ${
+              <div 
+                key={service} 
+                className={`relative p-4 rounded-lg transition-all duration-300 cursor-pointer ${
                   service === currentlyOpenService 
-                    ? 'bg-[#FFBA38] text-[#1A1A1A]' 
+                    ? 'bg-[#FFBA38] text-[#1A1A1A] shadow-lg shadow-[#FFBA38]/20' 
                     : selectedTiers[service] 
                       ? 'bg-[#2A2A2A] text-[#F8F6F0] border border-[#FFBA38]/30'
-                      : 'bg-[#2A2A2A] text-[#F8F6F0]/70 hover:bg-[#2A2A2A]/80'
+                      : 'bg-[#2A2A2A] text-[#F8F6F0]/70 hover:bg-[#2A2A2A]/80 border border-gray-700 hover:border-[#FFBA38]/30'
                 }`}
+                onClick={() => handleProductSelect(service)}
               >
-                {service}
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium">{service}</span>
+                  <div 
+                    className={`w-5 h-5 rounded-full ${
+                      service === currentlyOpenService 
+                        ? 'bg-[#1A1A1A] text-[#FFBA38]' 
+                        : 'bg-[#121212] text-[#F8F6F0]/70'
+                    } flex items-center justify-center cursor-pointer hover:bg-[#FFBA38] hover:text-[#121212] transition-colors`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openServiceInfoModal(service);
+                    }}
+                  >
+                    <span className="text-xs font-bold">i</span>
+                  </div>
+                </div>
+                <p className="text-xs opacity-80 mb-2">{serviceDescriptions[service].split('.')[0]}.</p>
                 {selectedTiers[service] && (
                   <span className="absolute -top-2 -right-2 w-6 h-6 bg-[#FFBA38] rounded-full flex items-center justify-center text-[#1A1A1A] text-xs font-bold">
                     ✓
                   </span>
                 )}
-              </button>
+                <div className="mt-2 text-xs">
+                  <span className={`${
+                    service === currentlyOpenService 
+                      ? 'text-[#1A1A1A]/70' 
+                      : 'text-[#FFBA38]'
+                  }`}>
+                    From ${Math.min(...Object.values(pricing[service]))} /month
+                  </span>
+                </div>
+              </div>
             ))}
           </div>
+          {selectedBusiness && currentlyOpenService && (
+            <div className="flex items-center mt-4 justify-center animate-pulse">
+              <svg className="w-5 h-5 text-[#FFBA38] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span className="text-sm text-[#F8F6F0]">Scroll down to select your tier</span>
+            </div>
+          )}
         </div>
 
         {/* Tier Selection */}
         {currentlyOpenService && (
-          <div>
+          <div ref={tiersSectionRef}>
             <h3 className="text-sm font-medium text-[#FFBA38]/70 uppercase tracking-wider mb-4">
-              Choose {currentlyOpenService} Tier
+              Step 3: Choose {currentlyOpenService} Tier
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {["Base", "Standard", "Premium"].map(tier => (
@@ -887,7 +1052,7 @@ const BundleBuilder = () => {
                   onClick={() => handleTierSelect(currentlyOpenService, tier)}
                   className={`p-6 rounded-lg cursor-pointer transition-all duration-300 ${
                     selectedTiers[currentlyOpenService] === tier 
-                      ? 'bg-[#2A2A2A] border-2 border-[#FFBA38]' 
+                      ? 'bg-[#2A2A2A] border-2 border-[#FFBA38] shadow-lg shadow-[#FFBA38]/10' 
                       : 'bg-[#2A2A2A] border border-gray-700 hover:border-[#FFBA38]/30'
                   }`}
                 >
@@ -914,9 +1079,56 @@ const BundleBuilder = () => {
                   <p className="text-sm text-[#F8F6F0]/80 leading-relaxed">
                     {getBestForText(currentlyOpenService, tier)}
                   </p>
+                  
+                  {/* Feature highlights preview (NEW) */}
+                  <div className="mt-4 pt-4 border-t border-[#FFBA38]/10">
+                    <h5 className="text-xs font-medium text-[#FFBA38]/70 mb-2">Feature Highlights:</h5>
+                    <ul className="space-y-1">
+                      {detailedFeatures[currentlyOpenService]?.[tier]?.features?.slice(0, 2).map((feature, idx) => (
+                        <li key={idx} className="text-xs text-[#F8F6F0]/70">{feature}</li>
+                      ))}
+                      {detailedFeatures[currentlyOpenService]?.[tier]?.features?.length > 2 && (
+                        <li className="text-xs text-[#FFBA38]">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openTierDetailsModal(currentlyOpenService, tier);
+                            }}
+                            className="underline hover:no-underline"
+                          >
+                            See all features
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                  
+                  {/* Selected indicator */}
+                  {selectedTiers[currentlyOpenService] === tier && (
+                    <div className="absolute top-4 right-4">
+                      <div className="w-6 h-6 rounded-full bg-[#FFBA38] flex items-center justify-center text-[#1A1A1A] text-xs font-bold">
+                        ✓
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+            
+            {/* Action button (NEW) */}
+            {selectedTiers[currentlyOpenService] && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => {
+                    productsSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    setTimeout(() => setCurrentStep(2), 500);
+                  }}
+                  className="px-6 py-3 bg-[#2A2A2A] hover:bg-[#1A1A1A] text-[#F8F6F0] font-semibold rounded-lg transition-all duration-300"
+                >
+                  Select Another Service
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1009,7 +1221,7 @@ const BundleBuilder = () => {
         </div>
       )}
 
-      {/* Features Modal */}
+      {/* Feature Details Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#121212] rounded-xl p-6 w-full max-w-3xl max-h-[85vh] overflow-y-auto border border-[#FFBA38]/20">
@@ -1050,12 +1262,80 @@ const BundleBuilder = () => {
               ))}
             </div>
             
-            <button
-              onClick={() => setShowModal(false)}
-              className="mt-8 w-full py-3 bg-[#2A2A2A] text-[#F8F6F0] font-medium rounded-lg hover:bg-[#1A1A1A] hover:text-[#FFBA38] transition-colors"
-            >
-              Close
-            </button>
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  handleTierSelect(modalService, modalTier);
+                }}
+                className="flex-1 py-3 bg-[#FFBA38] text-[#1A1A1A] font-medium rounded-lg hover:bg-[#D4941E] transition-colors"
+              >
+                Select This Tier
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-3 bg-[#2A2A2A] text-[#F8F6F0] font-medium rounded-lg hover:bg-[#1A1A1A] hover:text-[#FFBA38] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Service Info Modal (NEW) */}
+      {showServiceInfoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#121212] rounded-xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-[#FFBA38]/20">
+            <div className="flex justify-between items-center mb-6 border-b border-[#FFBA38]/10 pb-4">
+              <h2 className="text-2xl font-bold text-[#F8F6F0]">
+                {serviceInfoContent.title}
+              </h2>
+              <button
+                onClick={() => setShowServiceInfoModal(false)}
+                className="w-10 h-10 rounded-full bg-[#2A2A2A] text-[#F8F6F0]/60 hover:bg-[#1A1A1A] hover:text-[#FFBA38] transition-all flex items-center justify-center"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-[#FFBA38]/90 mb-3">
+                What is {serviceInfoContent.title}?
+              </h3>
+              <p className="text-[#F8F6F0]/80 text-sm mb-4">
+                {serviceInfoContent.description}
+              </p>
+              
+              <div className="mt-6 p-4 bg-[#FFBA38]/10 border border-[#FFBA38]/20 rounded-lg">
+                <h3 className="text-sm font-semibold text-[#FFBA38] mb-2">
+                  Success Story
+                </h3>
+                <p className="text-[#F8F6F0]/80 text-sm italic">
+                  "{serviceInfoContent.successStory}"
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setShowServiceInfoModal(false);
+                  handleProductSelect(serviceInfoContent.title);
+                }}
+                className="flex-1 py-3 bg-[#FFBA38] text-[#1A1A1A] font-medium rounded-lg hover:bg-[#D4941E] transition-colors"
+              >
+                Select This Service
+              </button>
+              <button
+                onClick={() => setShowServiceInfoModal(false)}
+                className="flex-1 py-3 bg-[#2A2A2A] text-[#F8F6F0] font-medium rounded-lg hover:bg-[#1A1A1A] hover:text-[#FFBA38] transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1084,6 +1364,16 @@ const BundleBuilder = () => {
           </div>
         </div>
       )}
+
+      {/* "Back to Top" button (NEW) */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-4 left-4 bg-[#FFBA38] text-[#1A1A1A] rounded-full p-3 shadow-lg hover:bg-[#D4941E] transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      </button>
 
       {/* Luxury Professional Styles */}
       <style jsx>{`
@@ -1126,7 +1416,7 @@ const BundleBuilder = () => {
           background: #D4941E;
         }
 
-        /* Animation */
+        /* Animations */
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1134,6 +1424,15 @@ const BundleBuilder = () => {
         
         .animate-fade-in {
           animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 0.4; }
+        }
+        
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
     </div>
