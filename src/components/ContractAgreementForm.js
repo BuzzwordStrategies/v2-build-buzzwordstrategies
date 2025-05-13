@@ -17,15 +17,18 @@ const ContractAgreementForm = ({
   
   // Clear errors when input changes
   useEffect(() => {
-    setErrors({});
-  }, [agreeToTerms, signatureName]);
+    if (Object.keys(errors).length > 0) {
+      setErrors({});
+    }
+  }, [agreeToTerms, signatureName, errors]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate form
+    // Reset errors
     const validationErrors = {};
     
+    // Validation
     if (!agreeToTerms) {
       validationErrors.agreeToTerms = 'You must agree to the terms by checking the box';
     }
@@ -43,11 +46,14 @@ const ContractAgreementForm = ({
     }
     
     // Submit the form data
-    onSubmit({
+    const agreementData = {
       agreeToTerms,
-      signatureName,
+      signatureName: signatureName.trim(),
       agreementDate: currentDate
-    });
+    };
+    
+    // Pass the agreement data to the parent component
+    onSubmit(agreementData);
   };
 
   return (
