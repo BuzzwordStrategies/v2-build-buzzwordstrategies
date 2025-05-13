@@ -3,7 +3,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
 exports.handler = async (event) => {
-  // Handle POST request only for simplicity
+  // Only handle POST requests
   if (event.httpMethod !== 'POST') {
     return { 
       statusCode: 405, 
@@ -31,7 +31,10 @@ exports.handler = async (event) => {
       DOCUSIGN_PRIVATE_KEY
     );
 
-    // Create envelope from template using template custom fields
+    // Direct link to Stripe checkout
+    const stripe_checkout_url = `https://ephemeral-moonbeam-0a8703.netlify.app/.netlify/functions/create-stripe-checkout?bundleID=${encodeURIComponent(finalBundleID)}&bundleName=${encodeURIComponent(bundleName || "My Bundle")}&finalMonthly=${encodeURIComponent(finalMonthly)}&subLength=${encodeURIComponent(subLength)}&selectedServices=${encodeURIComponent(selectedServices || "No services selected")}`;
+
+    // Create envelope using a different approach
     const envelopeDefinition = {
       emailSubject: `Buzzword Strategies Bundle Agreement - ${bundleName}`,
       templateId: "ca675320-b73c-4d59-9b15-b7c071ffd196",
@@ -39,33 +42,43 @@ exports.handler = async (event) => {
         email: clientEmail || 'client@example.com',
         name: clientName || 'Client Name',
         roleName: "Signer",
-        clientUserId: "1" // For embedded signing
+        clientUserId: "1", // For embedded signing
+        tabs: {
+          textTabs: [
+            {
+              tabLabel: "bundleID",
+              value: finalBundleID,
+              locked: "true",
+              tabId: "bundleID"
+            },
+            {
+              tabLabel: "bundleName", 
+              value: bundleName || "My Bundle",
+              locked: "true",
+              tabId: "bundleName"
+            },
+            {
+              tabLabel: "subLength",
+              value: subLength.toString(),
+              locked: "true",
+              tabId: "subLength"
+            },
+            {
+              tabLabel: "finalMonthly", 
+              value: finalMonthly.toString(),
+              locked: "true",
+              tabId: "finalMonthly"
+            },
+            {
+              tabLabel: "selectedServices",
+              value: selectedServices || "No services selected",
+              locked: "true",
+              tabId: "selectedServices"
+            }
+          ]
+        }
       }],
-      status: "sent",
-      customFields: {
-        textCustomFields: [
-          {
-            name: "bundleID",
-            value: finalBundleID
-          },
-          {
-            name: "bundleName", 
-            value: bundleName || "My Bundle"
-          },
-          {
-            name: "subLength",
-            value: subLength.toString()
-          },
-          {
-            name: "finalMonthly", 
-            value: finalMonthly.toString()
-          },
-          {
-            name: "selectedServices",
-            value: selectedServices || "No services selected"
-          }
-        ]
-      }
+      status: "sent"
     };
 
     // Send the envelope
@@ -79,9 +92,6 @@ exports.handler = async (event) => {
         }
       }
     );
-
-    // Direct link to Stripe checkout instead of thank-you page
-    const stripe_checkout_url = `https://ephemeral-moonbeam-0a8703.netlify.app/.netlify/functions/create-stripe-checkout?bundleID=${encodeURIComponent(finalBundleID)}&bundleName=${encodeURIComponent(bundleName || "My Bundle")}&finalMonthly=${encodeURIComponent(finalMonthly)}&subLength=${encodeURIComponent(subLength)}&selectedServices=${encodeURIComponent(selectedServices || "No services selected")}`;
 
     // Get the signing URL for embedded signing
     const envelopeId = response.data.envelopeId;
@@ -110,11 +120,13 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
+    console.error('Error creating DocuSign envelope:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Failed to create DocuSign envelope', 
-        details: error.message
+        details: error.message,
+        stack: error.stack
       })
     };
   }
