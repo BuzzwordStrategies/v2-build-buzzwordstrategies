@@ -673,7 +673,7 @@ const BundleBuilder = () => {
         console.error("Error loading saved bundle:", e);
       }
     }
-  }, []);
+  }, [products]); // Added products to the dependency array to fix the ESLint warning
 
   // Save bundle data
   useEffect(() => {
