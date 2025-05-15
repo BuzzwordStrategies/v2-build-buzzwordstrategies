@@ -7,6 +7,20 @@
   NODE_VERSION = "22.15.0"
   CI = "false"
 
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 3000
+  framework = "#custom"
+  functionsPort = 9000
+
+[[redirects]]
+  from = "/api/*"
+  to = "http://localhost:5000/api/:splat"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
