@@ -16,7 +16,7 @@
     "@stripe/react-stripe-js": "^2.4.0",
     "@stripe/stripe-js": "^2.2.2",
     "nodemon": "^3.0.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
     "http-proxy-middleware": "^2.0.6"
   },
   "scripts": {
@@ -25,7 +25,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "nodemon server/server.js",
-    "dev": "concurrently \"npm run server\" \"npm run start\""
+    "dev": "concurrently \"npm run server\" \"npm run start\"",
     "netlify": "netlify dev"
   },
   "eslintConfig": {
