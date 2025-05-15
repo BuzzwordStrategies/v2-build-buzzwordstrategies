@@ -10,11 +10,13 @@ exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const { bundleID, bundleName, finalMonthly, subLength, selectedServices } = params;
   
+  console.log('Received parameters:', params);
+  
   if (!finalMonthly) {
     console.error('Missing required parameters:', params);
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Missing required parameters' })
+      body: JSON.stringify({ error: 'Missing required parameter: finalMonthly' })
     };
   }
   
@@ -82,6 +84,7 @@ exports.handler = async (event) => {
     });
 
     console.log('Stripe session created:', session.id);
+    console.log('Stripe checkout URL:', session.url);
     
     // Redirect directly to Stripe
     return {
