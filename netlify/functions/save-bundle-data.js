@@ -52,6 +52,7 @@ exports.handler = async (event) => {
       bundleData.customer_state = userInfo.clientState;
       bundleData.customer_zip = userInfo.clientZip;
       bundleData.customer_company = userInfo.clientCompany || '';
+      bundleData.customer_website = userInfo.clientWebsite || ''; // Added website field
       bundleData.marketing_consent = userInfo.marketingConsent || false;
     }
     
