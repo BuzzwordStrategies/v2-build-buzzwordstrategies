@@ -17,6 +17,7 @@
     "@stripe/stripe-js": "^2.2.2",
     "nodemon": "^3.0.2",
     "dotenv": "^16.3.1"
+    "http-proxy-middleware": "^2.0.6"
   },
   "scripts": {
     "start": "react-scripts start",
