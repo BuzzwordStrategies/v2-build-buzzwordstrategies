@@ -1,6 +1,5 @@
 // src/components/ContractAgreementForm.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const ContractAgreementForm = ({ 
   onSubmit, 
@@ -61,21 +60,20 @@ const ContractAgreementForm = ({
       // First, submit the agreement data
       await onSubmit(agreementData);
       
-      // Then create a Stripe checkout session
-      const response = await axios.post('/.netlify/functions/create-stripe-checkout', {
-        bundleID: bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      // Then DIRECTLY redirect to Stripe checkout
+      const finalBundleID = bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Create the URL parameters
+      const params = new URLSearchParams({
+        bundleID: finalBundleID,
         bundleName: bundleName || 'Marketing Bundle',
         finalMonthly,
         subLength,
         selectedServices
-      });
+      }).toString();
       
-      // Redirect to Stripe checkout
-      if (response.data && response.data.redirectUrl) {
-        window.location.href = response.data.redirectUrl;
-      } else {
-        throw new Error('Failed to create checkout session');
-      }
+      // Redirect directly to the Stripe checkout endpoint
+      window.location.href = `/.netlify/functions/create-stripe-checkout?${params}`;
     } catch (error) {
       console.error('Error:', error);
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
