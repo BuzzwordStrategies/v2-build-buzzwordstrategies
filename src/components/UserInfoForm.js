@@ -25,20 +25,20 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
   };
 
   const validate = () => {
-  const newErrors = {};
-  if (!formData.clientName.trim()) newErrors.clientName = 'Name is required';
-  if (!formData.clientEmail.trim()) newErrors.clientEmail = 'Email is required';
-  else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) newErrors.clientEmail = 'Email is invalid';
-  if (!formData.clientPhone.trim()) newErrors.clientPhone = 'Phone is required';
-  if (!formData.clientAddress.trim()) newErrors.clientAddress = 'Address is required';
-  if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
-  if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
-  if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
-  // Removed the marketingConsent check to make it optional
-  
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    const newErrors = {};
+    if (!formData.clientName.trim()) newErrors.clientName = 'Name is required';
+    if (!formData.clientEmail.trim()) newErrors.clientEmail = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) newErrors.clientEmail = 'Email is invalid';
+    if (!formData.clientPhone.trim()) newErrors.clientPhone = 'Phone is required';
+    if (!formData.clientAddress.trim()) newErrors.clientAddress = 'Address is required';
+    if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
+    if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
+    if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
+    // Marketing consent is now optional - removed validation check
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -164,10 +164,9 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
             />
           </div>
           <div className="ml-3">
-            <label htmlFor="marketingConsent" className={`text-sm font-medium ${errors.marketingConsent ? 'text-red-500' : 'text-[#F8F6F0]/70'}`}>
+            <label htmlFor="marketingConsent" className="text-sm font-medium text-[#F8F6F0]/70">
               I agree to be contacted about future Buzzword Strategies marketing offers
             </label>
-            {errors.marketingConsent && <p className="mt-1 text-xs text-red-500">{errors.marketingConsent}</p>}
           </div>
         </div>
       </div>
