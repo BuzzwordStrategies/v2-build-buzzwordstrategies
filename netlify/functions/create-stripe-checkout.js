@@ -1,6 +1,7 @@
 // netlify/functions/create-stripe-checkout.js
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
 
 exports.handler = async (event) => {
   console.log('Starting create-stripe-checkout handler');
@@ -9,13 +10,16 @@ exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const { bundleID, bundleName, finalMonthly, subLength, selectedServices } = params;
   
-  if (!bundleID || !finalMonthly) {
+  if (!finalMonthly) {
     console.error('Missing required parameters:', params);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Missing required parameters' })
     };
   }
+  
+  // Ensure we have a bundleID
+  const finalBundleID = bundleID || `bwb-${uuidv4()}`;
   
   try {
     console.log('Creating Stripe session with params:', params);
@@ -27,7 +31,7 @@ exports.handler = async (event) => {
       
       if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
         await axios.patch(
-          `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${bundleID}`,
+          `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
           { 
             status: 'payment_pending',
             updated_at: new Date().toISOString()
@@ -58,7 +62,7 @@ exports.handler = async (event) => {
               name: `${bundleName || 'Marketing Bundle'} - ${subLength} month subscription`,
               description: selectedServices || 'Marketing services',
               metadata: {
-                bundleID: bundleID
+                bundleID: finalBundleID
               }
             },
             unit_amount: Math.round(parseFloat(finalMonthly) * 100), // Convert to cents
@@ -70,10 +74,10 @@ exports.handler = async (event) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${bundleID}`,
+      success_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${finalBundleID}`,
       cancel_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/cancel`,
       metadata: {
-        bundleID: bundleID
+        bundleID: finalBundleID
       }
     });
 
