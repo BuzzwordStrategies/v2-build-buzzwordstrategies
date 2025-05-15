@@ -25,20 +25,20 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!formData.clientName.trim()) newErrors.clientName = 'Name is required';
-    if (!formData.clientEmail.trim()) newErrors.clientEmail = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) newErrors.clientEmail = 'Email is invalid';
-    if (!formData.clientPhone.trim()) newErrors.clientPhone = 'Phone is required';
-    if (!formData.clientAddress.trim()) newErrors.clientAddress = 'Address is required';
-    if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
-    if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
-    if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
-    if (!formData.marketingConsent) newErrors.marketingConsent = 'You must agree to be contacted';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const newErrors = {};
+  if (!formData.clientName.trim()) newErrors.clientName = 'Name is required';
+  if (!formData.clientEmail.trim()) newErrors.clientEmail = 'Email is required';
+  else if (!/\S+@\S+\.\S+/.test(formData.clientEmail)) newErrors.clientEmail = 'Email is invalid';
+  if (!formData.clientPhone.trim()) newErrors.clientPhone = 'Phone is required';
+  if (!formData.clientAddress.trim()) newErrors.clientAddress = 'Address is required';
+  if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
+  if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
+  if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
+  // Removed the marketingConsent check to make it optional
+  
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();
