@@ -11,6 +11,7 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
     clientState: '',
     clientZip: '',
     clientCompany: '',
+    clientWebsite: '', // Added website field
     marketingConsent: false
   });
 
@@ -34,7 +35,7 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
     if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
     if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
     if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
-    // Marketing consent is now optional - removed validation check
+    // Marketing consent is optional, no validation required
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -96,6 +97,19 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
             name="clientCompany"
             value={formData.clientCompany}
             onChange={handleChange}
+            className="w-full p-3 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
+          />
+        </div>
+        
+        {/* Company Website Field */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-[#F8F6F0]/70 mb-1">Company Website</label>
+          <input
+            type="url"
+            name="clientWebsite"
+            value={formData.clientWebsite}
+            onChange={handleChange}
+            placeholder="https://example.com"
             className="w-full p-3 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
           />
         </div>
