@@ -42,41 +42,47 @@
       margin-top: 20px;
     }
   </style>
-  <script>
-    // Get URL parameters
-    function getUrlParams() {
-      return Object.fromEntries(
-        new URLSearchParams(window.location.search).entries()
-      );
-    }
-    
-    // Update order status when payment is successful
-    async function updateOrderStatus() {
-      const params = getUrlParams();
-      if (params.session_id && params.bundle_id) {
-        try {
-          // Update status in Supabase
-          await fetch('/.netlify/functions/update-payment-status', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              bundleID: params.bundle_id,
-              stripeSessionID: params.session_id,
-              status: 'paid'
-            })
-          });
-          console.log('Payment status updated successfully');
-        } catch (error) {
-          console.error('Error updating payment status:', error);
+ <script>
+  // Get URL parameters
+  function getUrlParams() {
+    return Object.fromEntries(
+      new URLSearchParams(window.location.search).entries()
+    );
+  }
+  
+  // Update order status when payment is successful
+  async function updateOrderStatus() {
+    const params = getUrlParams();
+    if (params.session_id && params.bundle_id) {
+      try {
+        // Update status in Supabase
+        await fetch('/.netlify/functions/update-payment-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bundleID: params.bundle_id,
+            stripeSessionID: params.session_id,
+            status: 'paid'
+          })
+        });
+        console.log('Payment status updated successfully');
+        
+        // Add bundle ID to success message
+        const bundleInfo = document.getElementById('bundle-info');
+        if (bundleInfo) {
+          bundleInfo.textContent = `Bundle ID: ${params.bundle_id}`;
         }
+      } catch (error) {
+        console.error('Error updating payment status:', error);
       }
     }
-    
-    // Run when page loads
-    window.onload = updateOrderStatus;
-  </script>
+  }
+  
+  // Run when page loads
+  window.onload = updateOrderStatus;
+</script>
 </head>
 <body>
   <div class="container">
