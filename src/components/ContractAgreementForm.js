@@ -57,23 +57,11 @@ const ContractAgreementForm = ({
     setIsProcessing(true);
     
     try {
-      // First, submit the agreement data
+      // Submit to parent component and let it handle the saving and redirect
       await onSubmit(agreementData);
       
-      // Then DIRECTLY redirect to Stripe checkout
-      const finalBundleID = bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      
-      // Create the URL parameters
-      const params = new URLSearchParams({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'Marketing Bundle',
-        finalMonthly,
-        subLength,
-        selectedServices
-      }).toString();
-      
-      // Redirect directly to the Stripe checkout endpoint
-      window.location.href = `/.netlify/functions/create-stripe-checkout?${params}`;
+      // The parent component (BundleBuilder) will handle the redirect
+      // No window.location.href changes here!
     } catch (error) {
       console.error('Error:', error);
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
