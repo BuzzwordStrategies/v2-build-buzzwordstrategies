@@ -656,7 +656,7 @@ const BundleBuilder = () => {
     return genericBestFor[service][tier];
   };
 
-  // NEW: Function to save bundle data to Supabase
+  // Function to save bundle data to Supabase
   const saveToSupabase = async (step) => {
     try {
       // Get current bundle data
@@ -693,7 +693,7 @@ const BundleBuilder = () => {
       } catch (expressError) {
         // Fallback to Netlify function
         console.log('Falling back to Netlify function', expressError);
-        await axios.post('/.netlify/functions/save-agreement', bundleData);
+        await axios.post('/.netlify/functions/save-bundle-data', bundleData);
         console.log('Saved to Netlify function');
       }
 
@@ -757,61 +757,58 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
+  // FIXED: This function had critical commented-out code that prevented the payment flow
   const handleAgreementSubmit = async (agreementData) => {
-  setAgreementInfo(agreementData);
-  setIsLoading(true);
-  
-  try {
-    // Save bundle data at step 2 (agreement)
-    const finalBundleID = await saveToSupabase(2);
+    setAgreementInfo(agreementData);
+    setIsLoading(true);
     
-    // Don't call the Netlify function - the redirect is now handled in ContractAgreementForm
-    // Comment out or remove all of these lines:
-    /*
-    const selectedServices = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
-    // Call the Netlify function to save agreement
-    const response = await fetch('/.netlify/functions/save-agreement', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        subLength,
-        finalMonthly: final.toFixed(2),
-        selectedServices,
-        userInfo: userInfo,
-        agreementInfo: agreementData
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Error response:', errorData);
-      throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      // Save bundle data at step 2 (agreement)
+      const finalBundleID = await saveToSupabase(2);
+      
+      // Format the selected services string
+      const selectedServices = Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => `${product}: ${tier}`)
+        .join(', ');
+      
+      // Call the Netlify function to save agreement
+      const response = await fetch('/.netlify/functions/save-agreement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bundleID: finalBundleID,
+          bundleName: bundleName || 'My Bundle',
+          subLength,
+          finalMonthly: final.toFixed(2),
+          selectedServices,
+          selectedTiers,
+          userInfo: userInfo,
+          agreementInfo: agreementData
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        alert('Error processing your request. Please try again.');
+        setIsLoading(false);
+      }
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}. Please try again.`);
+      setIsLoading(false);
     }
-    
-    const data = await response.json();
-    
-    if (data.redirectUrl) {
-      window.location.href = data.redirectUrl;
-    } else {
-      alert('Error processing your request. Please try again.');
-    }
-    */
-    
-    // Just set loading to false - the redirect happens in ContractAgreementForm now
-    setIsLoading(false);
-    
-  } catch (error) {
-    console.error('Error:', error);
-    alert(`Error: ${error.message}. Please try again.`);
-    setIsLoading(false);
-  }
-};
+  };
 
   // Handle industry selection with auto-scroll - Updated with data saving
   const handleIndustrySelect = async (industry) => {
