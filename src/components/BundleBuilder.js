@@ -57,20 +57,18 @@ const BundleBuilder = () => {
 
   // Industry-specific tier descriptions
   const bestForIndustry = {
-    // Existing industry descriptions kept as is
+    // Dental Clinic descriptions
     "Dental Clinic": {
       "Meta Ads": {
         Base: "Want to fill empty chairs & attract patients seeking routine care",
         Standard: "Ready to book high-value procedures like implants & ortho", 
         Premium: "Need to dominate your market & expand to new locations"
       },
-      // Other services kept as is
       "Google Ads": {
         Base: "Want patients searching 'dentist near me' to find you first",
         Standard: "Ready to capture searches for profitable specialties",
         Premium: "Need to own every dental search in your city"
       },
-      // The rest of the dental clinic mappings stay the same
       "TikTok Ads": {
         Base: "Want to attract younger patients with engaging content",
         Standard: "Ready to showcase smile transformations that go viral",
@@ -102,9 +100,8 @@ const BundleBuilder = () => {
         Premium: "Need an always-active social presence that converts"
       }
     },
-    // Other industries kept as-is
+    // Dental Lab descriptions
     "Dental Lab": {
-      // All dental lab mappings stay the same
       "Meta Ads": {
         Base: "Want local dentists to discover your lab services",
         Standard: "Ready to expand beyond your current service area",
@@ -146,8 +143,8 @@ const BundleBuilder = () => {
         Premium: "Need to be the most visible lab on social media"
       }
     },
+    // Small Business descriptions
     "Small Business": {
-      // All small business mappings stay the same
       "Meta Ads": {
         Base: "Want to test if social media can bring customers",
         Standard: "Ready to scale what's working & reach more people",
@@ -189,8 +186,8 @@ const BundleBuilder = () => {
         Premium: "Need social media to drive significant revenue"
       }
     },
+    // Fitness descriptions
     "Fitness": {
-      // All fitness mappings stay the same
       "Meta Ads": {
         Base: "Want to fill classes & attract new members locally",
         Standard: "Ready to promote specialty programs & trainers",
@@ -232,8 +229,8 @@ const BundleBuilder = () => {
         Premium: "Need non-stop engaging fitness content"
       }
     },
+    // Generic "Something Else" descriptions
     "Something Else": {
-      // All "Something Else" mappings stay the same
       "Meta Ads": {
         Base: "Get started with targeted social media advertising",
         Standard: "Scale successful campaigns & reach your ideal audience",
@@ -279,7 +276,6 @@ const BundleBuilder = () => {
 
   // Generic best for (fallback)
   const genericBestFor = {
-    // Generic best for descriptions kept as is
     "Meta Ads": {
       Base: "Want to test if social ads can grow your business",
       Standard: "Ready to scale successful campaigns & reach more customers",
@@ -322,9 +318,8 @@ const BundleBuilder = () => {
     }
   };
 
-  // Detailed tier features - kept as is
+  // Detailed tier features
   const detailedFeatures = {
-    // All detailed features kept the same
     "Google Ads": {
       Base: {
         disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
@@ -588,7 +583,7 @@ const BundleBuilder = () => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState('');
   
-  // New state for the service info modal
+  // Service info modal state
   const [showServiceInfoModal, setShowServiceInfoModal] = useState(false);
   const [serviceInfoContent, setServiceInfoContent] = useState({
     title: '',
@@ -596,7 +591,7 @@ const BundleBuilder = () => {
     successStory: ''
   });
   
-  // New state for the step indicator
+  // Step indicator state
   const [currentStep, setCurrentStep] = useState(1); // 1: Industry, 2: Services, 3: Tiers
 
   // Form step state variables
@@ -606,7 +601,7 @@ const BundleBuilder = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [bundleRejected, setBundleRejected] = useState(false);
 
-  // New: Bundle ID state
+  // Bundle ID state
   const [bundleID, setBundleID] = useState('');
 
   // Calculate discounts
@@ -757,7 +752,7 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
-  // FIXED: This function had critical commented-out code that prevented the payment flow
+  // FIXED: This is the updated function to properly handle the agreement submission and redirect to Stripe
   const handleAgreementSubmit = async (agreementData) => {
     setAgreementInfo(agreementData);
     setIsLoading(true);
@@ -771,6 +766,8 @@ const BundleBuilder = () => {
         .filter(([, tier]) => tier)
         .map(([product, tier]) => `${product}: ${tier}`)
         .join(', ');
+      
+      console.log('Calling save-agreement function with bundleID:', finalBundleID);
       
       // Call the Netlify function to save agreement
       const response = await fetch('/.netlify/functions/save-agreement', {
@@ -795,12 +792,25 @@ const BundleBuilder = () => {
       }
       
       const data = await response.json();
+      console.log('Response from save-agreement:', data);
       
       if (data.redirectUrl) {
+        console.log('Redirecting to Stripe checkout:', data.redirectUrl);
         window.location.href = data.redirectUrl;
       } else {
-        alert('Error processing your request. Please try again.');
-        setIsLoading(false);
+        // Fallback: Construct the URL directly if no redirectUrl in response
+        console.log('No redirectUrl in response, creating direct URL');
+        const queryParams = new URLSearchParams({
+          bundleID: finalBundleID,
+          bundleName: bundleName || 'My Bundle',
+          finalMonthly: final.toFixed(2),
+          subLength,
+          selectedServices
+        }).toString();
+        
+        const directUrl = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+        console.log('Redirecting to direct URL:', directUrl);
+        window.location.href = directUrl;
       }
       
     } catch (error) {
@@ -896,7 +906,7 @@ const BundleBuilder = () => {
               />
             </a>
             
-            {/* Step indicator (NEW) */}
+            {/* Step indicator */}
             <div className="w-full max-w-2xl">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
@@ -1175,7 +1185,7 @@ const BundleBuilder = () => {
                     {getBestForText(currentlyOpenService, tier)}
                   </p>
                   
-                  {/* Feature highlights preview (NEW) */}
+                  {/* Feature highlights preview */}
                   <div className="mt-4 pt-4 border-t border-[#FFBA38]/10">
                     <h5 className="text-xs font-medium text-[#FFBA38]/70 mb-2">Feature Highlights:</h5>
                     <ul className="space-y-1">
@@ -1210,7 +1220,7 @@ const BundleBuilder = () => {
               ))}
             </div>
             
-            {/* Action button (NEW) */}
+            {/* Action button */}
             {selectedTiers[currentlyOpenService] && (
               <div className="mt-6 flex justify-center">
                 <button
@@ -1385,7 +1395,7 @@ const BundleBuilder = () => {
         </div>
       )}
       
-      {/* Service Info Modal (NEW) */}
+      {/* Service Info Modal */}
       {showServiceInfoModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#121212] rounded-xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-[#FFBA38]/20">
@@ -1467,7 +1477,7 @@ const BundleBuilder = () => {
         </div>
       )}
 
-      {/* "Back to Top" button (NEW) */}
+      {/* "Back to Top" button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-4 left-4 bg-[#FFBA38] text-[#1A1A1A] rounded-full p-3 shadow-lg hover:bg-[#D4941E] transition-colors"
