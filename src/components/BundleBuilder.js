@@ -1,7 +1,9 @@
 // src/components/BundleBuilder.js
 import React, { useState, useEffect, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import UserInfoForm from './UserInfoForm';
 import ContractAgreementForm from './ContractAgreementForm';
+import axios from 'axios';
 
 // Products array outside component to avoid re-creation on each render
 const products = [
@@ -604,6 +606,9 @@ const BundleBuilder = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [bundleRejected, setBundleRejected] = useState(false);
 
+  // New: Bundle ID state
+  const [bundleID, setBundleID] = useState('');
+
   // Calculate discounts
   const getSubscriptionDiscount = (months) => {
     const discounts = {
@@ -651,12 +656,67 @@ const BundleBuilder = () => {
     return genericBestFor[service][tier];
   };
 
-  // Handle tier selection
-  const handleTierSelect = (service, tier) => {
+  // NEW: Function to save bundle data to Supabase
+  const saveToSupabase = async (step) => {
+    try {
+      // Get current bundle data
+      const currentBundleID = bundleID || `bwb-${uuidv4()}`;
+      
+      const selectedServices = Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => `${product}: ${tier}`)
+        .join(', ');
+        
+      const bundleData = {
+        bundleID: currentBundleID,
+        bundleName: bundleName || 'My Bundle',
+        selectedTiers: selectedTiers,
+        subLength,
+        selectedBusiness,
+        finalMonthly: parseFloat(final.toFixed(2)),
+        formStep: step,
+        selectedServices,
+        userInfo: step >= 1 ? userInfo : null,
+        agreementInfo: step >= 2 ? agreementInfo : null
+      };
+
+      // If no bundleID exists yet, set it
+      if (!bundleID) {
+        setBundleID(currentBundleID);
+      }
+
+      // Save to either our Express server (if deployed) or use Netlify function
+      try {
+        // Try Express endpoint first
+        await axios.post('/api/supabase/save-bundle', bundleData);
+        console.log('Saved to Express server');
+      } catch (expressError) {
+        // Fallback to Netlify function
+        console.log('Falling back to Netlify function', expressError);
+        await axios.post('/.netlify/functions/save-agreement', bundleData);
+        console.log('Saved to Netlify function');
+      }
+
+      return currentBundleID;
+    } catch (error) {
+      console.error('Error saving bundle data:', error);
+      return bundleID || null; // Return existing bundleID if there's an error
+    }
+  };
+
+  // Handle tier selection - Updated with data saving
+  const handleTierSelect = async (service, tier) => {
     setSelectedTiers(prev => ({
       ...prev,
       [service]: prev[service] === tier ? null : tier
     }));
+    
+    // Save data when tiers are selected (after a short delay to let state update)
+    setTimeout(async () => {
+      if (bundleID) {
+        await saveToSupabase(0);
+      }
+    }, 500);
   };
 
   // Open modal for tier details
@@ -676,9 +736,11 @@ const BundleBuilder = () => {
     setShowServiceInfoModal(true);
   };
 
-  // Form submission handlers
-  const handleBundleConfirm = () => {
+  // Form submission handlers - Updated with data saving
+  const handleBundleConfirm = async () => {
     setBundleRejected(false); // Reset if previously rejected
+    // Save bundle data at step 0 (bundle confirmation)
+    await saveToSupabase(0);
     setFormStep(1);
   };
 
@@ -688,8 +750,10 @@ const BundleBuilder = () => {
     // You could log this rejection to Supabase here
   };
 
-  const handleUserInfoSubmit = (formData) => {
+  const handleUserInfoSubmit = async (formData) => {
     setUserInfo(formData);
+    // Save bundle data at step 1 (user info)
+    await saveToSupabase(1);
     setFormStep(2); // Move to contract agreement
   };
 
@@ -697,19 +761,21 @@ const BundleBuilder = () => {
     setAgreementInfo(agreementData);
     setIsLoading(true);
     
-    const bundleID = "bwb-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
-    
-    const selectedServices = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
     try {
+      // Save bundle data at step 2 (agreement)
+      const finalBundleID = await saveToSupabase(2);
+      
+      const selectedServices = Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => `${product}: ${tier}`)
+        .join(', ');
+      
+      // Call the Netlify function to save agreement
       const response = await fetch('/.netlify/functions/save-agreement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bundleID,
+          bundleID: finalBundleID,
           bundleName: bundleName || 'My Bundle',
           subLength,
           finalMonthly: final.toFixed(2),
@@ -740,10 +806,15 @@ const BundleBuilder = () => {
     }
   };
 
-  // Handle industry selection with auto-scroll
-  const handleIndustrySelect = (industry) => {
+  // Handle industry selection with auto-scroll - Updated with data saving
+  const handleIndustrySelect = async (industry) => {
     setSelectedBusiness(industry);
     setCurrentStep(2); // Move to step 2: Services selection
+    
+    // Save data when industry is selected
+    if (bundleID) {
+      await saveToSupabase(0);
+    }
     
     // Scroll to products section after a short delay
     setTimeout(() => {
@@ -772,6 +843,12 @@ const BundleBuilder = () => {
         setSubLength(parsedData.subLength || 3);
         setBundleName(parsedData.bundleName || "");
         setSelectedBusiness(parsedData.selectedBusiness || "");
+        
+        // Load bundleID if available
+        if (parsedData.bundleID) {
+          setBundleID(parsedData.bundleID);
+        }
+        
         const firstService = Object.keys(parsedData.selectedTiers).find(service => products.includes(service)) || products[0];
         setCurrentlyOpenService(firstService);
         
@@ -791,6 +868,7 @@ const BundleBuilder = () => {
   // Save bundle data
   useEffect(() => {
     const bundleData = {
+      bundleID,
       selectedTiers,
       subLength,
       bundleName,
@@ -798,7 +876,7 @@ const BundleBuilder = () => {
       finalMonthly: parseFloat(final.toFixed(2))
     };
     localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
-  }, [selectedTiers, subLength, bundleName, selectedBusiness, final]);
+  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final]);
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white">
@@ -910,7 +988,14 @@ const BundleBuilder = () => {
                   max="24"
                   step="3"
                   value={subLength}
-                  onChange={(e) => setSubLength(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const newValue = parseInt(e.target.value);
+                    setSubLength(newValue);
+                    // Save data after update
+                    if (bundleID) {
+                      setTimeout(() => saveToSupabase(0), 500);
+                    }
+                  }}
                   className="w-full h-2 bg-[#2A2A2A] rounded-full appearance-none cursor-pointer accent-[#FFBA38]"
                   style={{
                     background: `linear-gradient(to right, #FFBA38 0%, #FFBA38 ${(subLength - 3) / 21 * 100}%, #2A2A2A ${(subLength - 3) / 21 * 100}%, #2A2A2A 100%)`
@@ -929,7 +1014,13 @@ const BundleBuilder = () => {
                 <div className="text-sm text-[#FFBA38]/70 mb-3">Per Month</div>
                 {selected.length > 0 && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      // Generate bundleID if it doesn't exist
+                      if (!bundleID) {
+                        const newBundleID = `bwb-${uuidv4()}`;
+                        setBundleID(newBundleID);
+                        // We save this in localStorage via the useEffect
+                      }
                       setShowPurchaseModal(true);
                       pricingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                     }}
@@ -1145,7 +1236,13 @@ const BundleBuilder = () => {
                   type="text"
                   placeholder="Bundle Name (Optional)"
                   value={bundleName}
-                  onChange={(e) => setBundleName(e.target.value)}
+                  onChange={(e) => {
+                    setBundleName(e.target.value);
+                    // Save after a delay
+                    if (bundleID) {
+                      setTimeout(() => saveToSupabase(0), 1000);
+                    }
+                  }}
                   className="w-full p-4 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg mb-6 text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
                 />
                 
@@ -1213,6 +1310,7 @@ const BundleBuilder = () => {
                     clientName={userInfo?.clientName || ''}
                     subLength={subLength}
                     finalMonthly={final.toFixed(2)}
+                    bundleID={bundleID}
                   />
                 )}
               </>
