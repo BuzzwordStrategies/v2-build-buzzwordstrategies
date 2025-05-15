@@ -1,6 +1,6 @@
-# Buzzword Strategies Bundle Builder
+markdown# Buzzword Strategies Bundle Builder
 
-A modern, interactive bundle builder for Buzzword Strategies' digital marketing services. Built with React and Tailwind CSS.
+A modern, interactive bundle builder for Buzzword Strategies' digital marketing services. Built with React, Express, and integrated with Stripe for payments.
 
 ## Features
 
@@ -10,45 +10,42 @@ A modern, interactive bundle builder for Buzzword Strategies' digital marketing 
 - Bundle and subscription discounts
 - Persistent cart state
 - Mobile-responsive design
-- DocuSign integration for contracts
+- Stripe integration for payments
+- Continuous data saving to Supabase
 
 ## Setup
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Create a `.env` file with your DocuSign credentials:
-   ```
-   DOCUSIGN_INTEGRATION_KEY=your_key_here
-   DOCUSIGN_USER_ID=your_user_id_here
-   DOCUSIGN_ACCOUNT_ID=your_account_id_here
-   DOCUSIGN_BASE_URL=https://demo.docusign.net/restapi
-   DOCUSIGN_PRIVATE_KEY=your_private_key_here
-   ```
-4. Start the development server: `npm start`
+3. Create a `.env` file with your environment variables:
+REACT_APP_STRIPE_PUBLIC_KEY=your_stripe_public_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+4. Start the development servers: `npm run dev`
+
+## Project Structure
+/
+├── netlify/
+│   └── functions/              # Netlify serverless functions
+├── server/
+│   ├── routes/                 # Express API routes
+│   └── server.js               # Express server entry point
+├── src/
+│   ├── components/             # React components
+│   ├── setupProxy.js           # Development proxy configuration
+│   ├── App.js                  # Root React component
+│   └── index.js                # React entry point
+├── .env                        # Environment variables (not in repo)
+├── netlify.toml                # Netlify configuration
+└── package.json                # Project dependencies
+
+## Development
+
+- `npm run dev`: Runs both the React app and Express server
+- `npm run server`: Runs only the Express server
+- `npm start`: Runs only the React app
 
 ## Deployment
 
-This project is configured for Netlify deployment. Simply connect your GitHub repository to Netlify, and it will automatically deploy on push to main.
-
-## Structure
-
-```
-src/
-├── components/
-│   └── BundleBuilder.js    # Main bundle builder component
-├── App.js                  # Root application component
-├── index.js               # Application entry point
-└── index.css              # Global styles with Tailwind imports
-
-netlify/
-└── functions/
-    └── create-docusign-envelope.js  # DocuSign integration
-```
-
-## Technologies
-
-- React 18
-- Tailwind CSS
-- Netlify Functions
-- DocuSign API
-- Local Storage for persistence
+This project is configured for Netlify deployment. The Express server should be deployed separately to a platform like Heroku, Render, or similar.
