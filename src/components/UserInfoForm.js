@@ -165,7 +165,7 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
           </div>
           <div className="ml-3">
             <label htmlFor="marketingConsent" className={`text-sm font-medium ${errors.marketingConsent ? 'text-red-500' : 'text-[#F8F6F0]/70'}`}>
-              I agree to be contacted about future Buzzword Strategies marketing offers *
+              I agree to be contacted about future Buzzword Strategies marketing offers
             </label>
             {errors.marketingConsent && <p className="mt-1 text-xs text-red-500">{errors.marketingConsent}</p>}
           </div>
