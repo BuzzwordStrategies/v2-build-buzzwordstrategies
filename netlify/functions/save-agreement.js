@@ -1,5 +1,6 @@
 // netlify/functions/save-agreement.js
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -19,29 +20,34 @@ exports.handler = async (event) => {
       finalMonthly, 
       selectedServices, 
       userInfo, 
-      agreementInfo 
+      agreementInfo,
+      selectedTiers
     } = data;
+
+    // Ensure we have a bundleID, generate if not provided
+    const finalBundleID = bundleID || `bwb-${uuidv4()}`;
 
     // Save to Supabase
     console.log('Saving agreement data to Supabase...');
     const saveResult = await saveToSupabase({
-      bundleID,
+      bundleID: finalBundleID,
       bundleName,
       subLength,
       finalMonthly,
       selectedServices,
-      clientName: userInfo.clientName,
-      clientEmail: userInfo.clientEmail,
-      clientPhone: userInfo.clientPhone,
-      clientAddress: userInfo.clientAddress,
-      clientCity: userInfo.clientCity,
-      clientState: userInfo.clientState,
-      clientZip: userInfo.clientZip,
-      clientCompany: userInfo.clientCompany || '',
-      marketingConsent: userInfo.marketingConsent,
-      agreementAccepted: agreementInfo.agreeToTerms,
-      agreementSignature: agreementInfo.signatureName,
-      agreementDate: agreementInfo.agreementDate,
+      selectedTiers: JSON.stringify(selectedTiers || {}),
+      clientName: userInfo?.clientName,
+      clientEmail: userInfo?.clientEmail,
+      clientPhone: userInfo?.clientPhone,
+      clientAddress: userInfo?.clientAddress,
+      clientCity: userInfo?.clientCity,
+      clientState: userInfo?.clientState,
+      clientZip: userInfo?.clientZip,
+      clientCompany: userInfo?.clientCompany || '',
+      marketingConsent: userInfo?.marketingConsent || false,
+      agreementAccepted: agreementInfo?.agreeToTerms,
+      agreementSignature: agreementInfo?.signatureName,
+      agreementDate: agreementInfo?.agreementDate,
       status: 'agreement_signed'
     });
     
@@ -50,7 +56,7 @@ exports.handler = async (event) => {
     // Create redirect URL to Stripe checkout
     console.log('Creating Stripe checkout URL...');
     const queryParams = new URLSearchParams({
-      bundleID: bundleID,
+      bundleID: finalBundleID,
       bundleName: bundleName || "My Bundle",
       finalMonthly: finalMonthly,
       subLength: subLength,
@@ -65,7 +71,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({ 
         success: true,
         message: "Agreement successfully saved",
-        redirectUrl: stripe_checkout_url
+        redirectUrl: stripe_checkout_url,
+        bundleID: finalBundleID
       })
     };
   } catch (error) {
@@ -103,9 +110,10 @@ async function saveToSupabase(data) {
       sub_length: parseInt(data.subLength),
       final_monthly: parseFloat(data.finalMonthly),
       selected_services: data.selectedServices,
+      selected_tiers: data.selectedTiers,
       customer_email: data.clientEmail,
       customer_name: data.clientName,
-      customer_address: `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}`,
+      customer_address: data.clientAddress ? `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}` : '',
       customer_phone: data.clientPhone,
       customer_company: data.clientCompany,
       marketing_consent: data.marketingConsent,
@@ -120,18 +128,50 @@ async function saveToSupabase(data) {
     console.log('Sending data to Supabase:', JSON.stringify(orderData, null, 2));
     console.log('Supabase URL:', SUPABASE_URL);
     
-    const response = await axios.post(
-      `${SUPABASE_URL}/rest/v1/pending_orders`,
-      orderData,
+    // Check if bundle already exists
+    const checkResponse = await axios.get(
+      `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${data.bundleID}`,
       {
         headers: {
           'apikey': SUPABASE_SERVICE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
+          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
         }
       }
     );
+    
+    let response;
+    
+    if (checkResponse.data && checkResponse.data.length > 0) {
+      // Update existing record
+      console.log('Updating existing record');
+      response = await axios.patch(
+        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${data.bundleID}`,
+        orderData,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        }
+      );
+    } else {
+      // Create new record
+      console.log('Creating new record');
+      response = await axios.post(
+        `${SUPABASE_URL}/rest/v1/pending_orders`,
+        orderData,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        }
+      );
+    }
     
     console.log('Supabase API response status:', response.status);
     console.log('Supabase API response data:', JSON.stringify(response.data, null, 2));
