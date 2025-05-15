@@ -1,5 +1,6 @@
 // src/components/ContractAgreementForm.js
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const ContractAgreementForm = ({ 
   onSubmit, 
@@ -8,12 +9,14 @@ const ContractAgreementForm = ({
   selectedServices, 
   clientName,
   subLength,
-  finalMonthly
+  finalMonthly,
+  bundleID
 }) => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const [errors, setErrors] = useState({});
   const [currentDate] = useState(new Date().toLocaleDateString());
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Clear errors when input changes
   useEffect(() => {
@@ -22,7 +25,7 @@ const ContractAgreementForm = ({
     }
   }, [agreeToTerms, signatureName, errors]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Reset errors
@@ -45,15 +48,39 @@ const ContractAgreementForm = ({
       return;
     }
     
-    // Submit the form data
+    // Create agreement data
     const agreementData = {
       agreeToTerms,
       signatureName: signatureName.trim(),
       agreementDate: currentDate
     };
     
-    // Pass the agreement data to the parent component
-    onSubmit(agreementData);
+    setIsProcessing(true);
+    
+    try {
+      // First, submit the agreement data
+      await onSubmit(agreementData);
+      
+      // Then create a Stripe checkout session
+      const response = await axios.post('/.netlify/functions/create-stripe-checkout', {
+        bundleID: bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        bundleName: bundleName || 'Marketing Bundle',
+        finalMonthly,
+        subLength,
+        selectedServices
+      });
+      
+      // Redirect to Stripe checkout
+      if (response.data && response.data.redirectUrl) {
+        window.location.href = response.data.redirectUrl;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -217,15 +244,27 @@ const ContractAgreementForm = ({
           type="button"
           onClick={onCancel}
           className="py-3 bg-[#2A2A2A] text-[#F8F6F0]/70 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
+          disabled={isProcessing}
         >
           Back
         </button>
         <button
           type="button"
           onClick={handleSubmit}
-          className="py-3 bg-[#FFBA38] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#D4941E] transition-colors"
+          className={`py-3 ${isProcessing ? 'bg-[#2A2A2A] text-[#F8F6F0]/50' : 'bg-[#FFBA38] text-[#1A1A1A] hover:bg-[#D4941E]'} font-semibold rounded-lg transition-colors`}
+          disabled={isProcessing}
         >
-          Agree & Continue to Payment
+          {isProcessing ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#F8F6F0]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </div>
+          ) : (
+            'Agree & Continue to Payment'
+          )}
         </button>
       </div>
     </div>
