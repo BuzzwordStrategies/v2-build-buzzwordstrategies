@@ -26,6 +26,7 @@
     "eject": "react-scripts eject",
     "server": "nodemon server/server.js",
     "dev": "concurrently \"npm run server\" \"npm run start\""
+    "netlify": "netlify dev"
   },
   "eslintConfig": {
     "extends": [
