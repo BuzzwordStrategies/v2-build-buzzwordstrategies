@@ -1,5 +1,6 @@
 // netlify/functions/create-stripe-checkout.js
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const axios = require('axios');
 
 exports.handler = async (event) => {
   console.log('Starting create-stripe-checkout handler');
@@ -19,6 +20,33 @@ exports.handler = async (event) => {
   try {
     console.log('Creating Stripe session with params:', params);
     
+    // Update Supabase with payment pending status
+    try {
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+      
+      if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+        await axios.patch(
+          `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${bundleID}`,
+          { 
+            status: 'payment_pending',
+            updated_at: new Date().toISOString()
+          },
+          {
+            headers: {
+              'apikey': SUPABASE_SERVICE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        console.log('Updated Supabase with payment pending status');
+      }
+    } catch (supabaseError) {
+      console.error('Error updating Supabase status:', supabaseError);
+      // Continue with Stripe checkout even if Supabase update fails
+    }
+    
     // Create a simple Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -28,7 +56,10 @@ exports.handler = async (event) => {
             currency: 'usd',
             product_data: {
               name: `${bundleName || 'Marketing Bundle'} - ${subLength} month subscription`,
-              description: selectedServices || 'Marketing services'
+              description: selectedServices || 'Marketing services',
+              metadata: {
+                bundleID: bundleID
+              }
             },
             unit_amount: Math.round(parseFloat(finalMonthly) * 100), // Convert to cents
             recurring: {
@@ -39,8 +70,11 @@ exports.handler = async (event) => {
         },
       ],
       mode: 'subscription',
-      success_url: `https://ephemeral-moonbeam-0a8703.netlify.app/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${bundleID}`,
-      cancel_url: 'https://ephemeral-moonbeam-0a8703.netlify.app/cancel',
+      success_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${bundleID}`,
+      cancel_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/cancel`,
+      metadata: {
+        bundleID: bundleID
+      }
     });
 
     console.log('Stripe session created:', session.id);
