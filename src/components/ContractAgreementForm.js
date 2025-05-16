@@ -60,8 +60,7 @@ const ContractAgreementForm = ({
       // Submit to parent component and let it handle the saving and redirect
       await onSubmit(agreementData);
       
-      // The parent component (BundleBuilder) will handle the redirect
-      // No window.location.href changes here
+      // No need to manually redirect here as the parent component will handle it
     } catch (error) {
       console.error('Error:', error);
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
