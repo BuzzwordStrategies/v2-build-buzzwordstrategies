@@ -752,7 +752,6 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
-// FIXED: Corrected handleAgreementSubmit function
 const handleAgreementSubmit = async (agreementData) => {
   setAgreementInfo(agreementData);
   setIsLoading(true);
@@ -760,14 +759,6 @@ const handleAgreementSubmit = async (agreementData) => {
   try {
     // Save bundle data at step 2 (agreement)
     const finalBundleID = await saveToSupabase(2);
-    
-    // Format the selected services string
-    const selectedServices = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
-    console.log('Calling save-agreement function with bundleID:', finalBundleID);
     
     // Call the Netlify function to save agreement
     const response = await fetch('/.netlify/functions/save-agreement', {
@@ -778,7 +769,10 @@ const handleAgreementSubmit = async (agreementData) => {
         bundleName: bundleName || 'My Bundle',
         subLength,
         finalMonthly: final.toFixed(2),
-        selectedServices,
+        selectedServices: Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => `${product}: ${tier}`)
+          .join(', '),
         selectedTiers,
         userInfo: userInfo,
         agreementInfo: agreementData
@@ -791,29 +785,28 @@ const handleAgreementSubmit = async (agreementData) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // Parse the response
     const data = await response.json();
     
-    if (data.success && data.redirectUrl) {
-      console.log('Redirecting to:', data.redirectUrl);
-      // First try to redirect using the response URL
+    if (data.redirectUrl) {
       window.location.href = data.redirectUrl;
     } else {
-      // Fallback: Directly create the redirect URL
+      // Fallback direct redirect to Stripe checkout
       const queryParams = new URLSearchParams({
         bundleID: finalBundleID,
         bundleName: bundleName || 'My Bundle',
         finalMonthly: final.toFixed(2),
         subLength,
-        selectedServices
+        selectedServices: Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => `${product}: ${tier}`)
+          .join(', ')
       }).toString();
       
-      console.log('Fallback redirect to Stripe checkout');
       window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
     }
   } catch (error) {
     console.error('Error:', error);
-    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+    alert(`Error: ${error.message}. Please try again.`);
     setIsLoading(false);
   }
 };
