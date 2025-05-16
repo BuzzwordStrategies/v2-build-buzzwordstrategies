@@ -24,50 +24,48 @@ const ContractAgreementForm = ({
     }
   }, [agreeToTerms, signatureName, errors]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Reset errors
-    const validationErrors = {};
-    
-    // Validation
-    if (!agreeToTerms) {
-      validationErrors.agreeToTerms = 'You must agree to the terms by checking the box';
-    }
-    
-    if (!signatureName.trim()) {
-      validationErrors.signatureName = 'Please type your full name to indicate agreement';
-    } else if (signatureName.trim().toLowerCase() !== clientName.toLowerCase()) {
-      validationErrors.signatureName = 'The name must match your full name exactly';
-    }
-    
-    // If there are errors, show them and stop submission
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    
-    // Create agreement data
-    const agreementData = {
-      agreeToTerms,
-      signatureName: signatureName.trim(),
-      agreementDate: currentDate
-    };
-    
-    setIsProcessing(true);
-    
-    try {
-      // Call onSubmit to pass agreement data to parent
-      await onSubmit(agreementData);
-      
-      // Note: The parent component (BundleBuilder) will handle the redirect to Stripe
-      // We don't do any manual redirection here
-    } catch (error) {
-      console.error('Error:', error);
-      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-      setIsProcessing(false);
-    }
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Reset errors
+  const validationErrors = {};
+  
+  // Validation
+  if (!agreeToTerms) {
+    validationErrors.agreeToTerms = 'You must agree to the terms by checking the box';
+  }
+  
+  if (!signatureName.trim()) {
+    validationErrors.signatureName = 'Please type your full name to indicate agreement';
+  } else if (signatureName.trim().toLowerCase() !== clientName.toLowerCase()) {
+    validationErrors.signatureName = 'The name must match your full name exactly';
+  }
+  
+  // If there are errors, show them and stop submission
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+  
+  // Create agreement data
+  const agreementData = {
+    agreeToTerms,
+    signatureName: signatureName.trim(),
+    agreementDate: currentDate
   };
+  
+  setIsProcessing(true);
+  
+  try {
+    // Submit the agreement data to parent
+    await onSubmit(agreementData);
+    // The parent component (BundleBuilder) will handle the redirect
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+    setIsProcessing(false);
+  }
+};
 
   return (
     <div className="space-y-4">
