@@ -53,6 +53,12 @@ exports.handler = async (event) => {
       // Continue with Stripe checkout even if Supabase update fails
     }
     
+    // Convert finalMonthly to a valid number
+    const monthlyAmount = parseFloat(finalMonthly);
+    if (isNaN(monthlyAmount)) {
+      throw new Error(`Invalid amount: ${finalMonthly}`);
+    }
+    
     // Create a simple Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -67,7 +73,7 @@ exports.handler = async (event) => {
                 bundleID: finalBundleID
               }
             },
-            unit_amount: Math.round(parseFloat(finalMonthly) * 100), // Convert to cents
+            unit_amount: Math.round(monthlyAmount * 100), // Convert to cents
             recurring: {
               interval: 'month',
             },
@@ -92,7 +98,11 @@ exports.handler = async (event) => {
       headers: {
         Location: session.url,
       },
-      body: '',
+      body: JSON.stringify({
+        id: session.id,
+        url: session.url,
+        bundleID: finalBundleID
+      }),
     };
     
   } catch (error) {
