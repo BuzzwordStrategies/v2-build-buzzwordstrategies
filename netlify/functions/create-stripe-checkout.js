@@ -96,7 +96,7 @@ exports.handler = async (event) => {
 return {
   statusCode: 303,
   headers: {
-    Location: session.url,
+    Location: session.url
   },
-  body: "", // Empty body for redirects
+  body: ""
 };
