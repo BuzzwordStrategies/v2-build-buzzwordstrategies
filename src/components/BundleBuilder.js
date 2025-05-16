@@ -752,100 +752,97 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
-  // FIXED: This is the updated function to properly handle the agreement submission and redirect to Stripe
-  const handleAgreementSubmit = async (agreementData) => {
-    setAgreementInfo(agreementData);
-    setIsLoading(true);
-    
-    try {
-      // Save bundle data at step 2 (agreement)
-      const finalBundleID = await saveToSupabase(2);
-      
-      // Format the selected services string
-      const selectedServices = Object.entries(selectedTiers)
-        .filter(([, tier]) => tier)
-        .map(([product, tier]) => `${product}: ${tier}`)
-        .join(', ');
-      
-      console.log('Calling save-agreement function with bundleID:', finalBundleID);
-      
-      // Call the Netlify function to save agreement
-      const response = await fetch('/.netlify/functions/save-agreement', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bundleID: finalBundleID,
-          bundleName: bundleName || 'My Bundle',
-          subLength,
-          finalMonthly: final.toFixed(2),
-          selectedServices,
-          selectedTiers,
-          userInfo: userInfo,
-          agreementInfo: agreementData
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Response from save-agreement:', data);
-      
-      if (data.redirectUrl) {
-        console.log('Redirecting to Stripe checkout:', data.redirectUrl);
-        window.location.href = data.redirectUrl;
-      } else {
-        // Fallback: Construct the URL directly if no redirectUrl in response
-        console.log('No redirectUrl in response, creating direct URL');
-        const queryParams = new URLSearchParams({
-          bundleID: finalBundleID,
-          bundleName: bundleName || 'My Bundle',
-          finalMonthly: final.toFixed(2),
-          subLength,
-          selectedServices
-        }).toString();
-        
-        const directUrl = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-        console.log('Redirecting to direct URL:', directUrl);
-        window.location.href = directUrl;
-      }
-      
-    } catch (error) {
-      console.error('Error:', error);
-      alert(`Error: ${error.message}. Please try again.`);
-      setIsLoading(false);
-    }
-  };
-
-  // Handle industry selection with auto-scroll - Updated with data saving
-  const handleIndustrySelect = async (industry) => {
-    setSelectedBusiness(industry);
-    setCurrentStep(2); // Move to step 2: Services selection
-    
-    // Save data when industry is selected
-    if (bundleID) {
-      await saveToSupabase(0);
-    }
-    
-    // Scroll to products section after a short delay
-    setTimeout(() => {
-      productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-  };
+// Direct implementation that forcefully redirects to Stripe checkout
+const handleAgreementSubmit = async (agreementData) => {
+  setAgreementInfo(agreementData);
+  setIsLoading(true);
   
-  // Handle product selection with auto-scroll
-  const handleProductSelect = (product) => {
-    setCurrentlyOpenService(product);
-    setCurrentStep(3); // Move to step 3: Tier selection
+  try {
+    // Save bundle data at step 2 (agreement)
+    const finalBundleID = await saveToSupabase(2);
     
-    // Scroll to tiers section after a short delay
-    setTimeout(() => {
-      tiersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-  };
+    // Format the selected services string
+    const selectedServices = Object.entries(selectedTiers)
+      .filter(([, tier]) => tier)
+      .map(([product, tier]) => `${product}: ${tier}`)
+      .join(', ');
+    
+    console.log('Calling save-agreement function with bundleID:', finalBundleID);
+    
+    // Call the Netlify function to save agreement
+    const response = await fetch('/.netlify/functions/save-agreement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bundleID: finalBundleID,
+        bundleName: bundleName || 'My Bundle',
+        subLength,
+        finalMonthly: final.toFixed(2),
+        selectedServices,
+        selectedTiers,
+        userInfo: userInfo,
+        agreementInfo: agreementData
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Error response:', errorData);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Parse the response but don't wait for redirectUrl
+    await response.json();
+    
+    // Immediately create and use the direct URL to Stripe checkout
+    const queryParams = new URLSearchParams({
+      bundleID: finalBundleID,
+      bundleName: bundleName || 'My Bundle',
+      finalMonthly: final.toFixed(2),
+      subLength,
+      selectedServices
+    }).toString();
+    
+    // Direct URL to Stripe checkout
+    const stripeCheckoutUrl = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+    console.log('Redirecting directly to Stripe checkout:', stripeCheckoutUrl);
+    
+    // Force window location change to Stripe checkout
+    window.location.href = stripeCheckoutUrl;
+    
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+    setIsLoading(false);
+  }
+};
+
+// Handle industry selection with auto-scroll - Updated with data saving
+const handleIndustrySelect = async (industry) => {
+  setSelectedBusiness(industry);
+  setCurrentStep(2); // Move to step 2: Services selection
+  
+  // Save data when industry is selected
+  if (bundleID) {
+    await saveToSupabase(0);
+  }
+  
+  // Scroll to products section after a short delay
+  setTimeout(() => {
+    productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+};
+
+// Handle product selection with auto-scroll
+const handleProductSelect = (product) => {
+  setCurrentlyOpenService(product);
+  setCurrentStep(3); // Move to step 3: Tier selection
+  
+  // Scroll to tiers section after a short delay
+  setTimeout(() => {
+    tiersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+};
 
   // Load saved bundle on mount
   useEffect(() => {
