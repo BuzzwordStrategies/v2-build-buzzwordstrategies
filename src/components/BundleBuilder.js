@@ -791,17 +791,32 @@ const handleAgreementSubmit = async (agreementData) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // Parse the response but don't wait for redirectUrl
-    await response.json();
+    // Parse the response
+    const data = await response.json();
     
-    // Immediately create and use the direct URL to Stripe checkout
-    const queryParams = new URLSearchParams({
-      bundleID: finalBundleID,
-      bundleName: bundleName || 'My Bundle',
-      finalMonthly: final.toFixed(2),
-      subLength,
-      selectedServices
-    }).toString();
+    if (data.success && data.redirectUrl) {
+      console.log('Redirecting to:', data.redirectUrl);
+      // First try to redirect using the response URL
+      window.location.href = data.redirectUrl;
+    } else {
+      // Fallback: Directly create the redirect URL
+      const queryParams = new URLSearchParams({
+        bundleID: finalBundleID,
+        bundleName: bundleName || 'My Bundle',
+        finalMonthly: final.toFixed(2),
+        subLength,
+        selectedServices
+      }).toString();
+      
+      console.log('Fallback redirect to Stripe checkout');
+      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+    setIsLoading(false);
+  }
+};
     
     // Direct URL to Stripe checkout
     const stripeCheckoutUrl = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
