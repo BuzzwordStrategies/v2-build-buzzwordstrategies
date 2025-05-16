@@ -57,10 +57,11 @@ const ContractAgreementForm = ({
     setIsProcessing(true);
     
     try {
-      // Submit to parent component and let it handle the saving and redirect
+      // Call onSubmit to pass agreement data to parent
       await onSubmit(agreementData);
       
-      // No need to manually redirect here as the parent component will handle it
+      // Note: The parent component (BundleBuilder) will handle the redirect to Stripe
+      // We don't do any manual redirection here
     } catch (error) {
       console.error('Error:', error);
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
