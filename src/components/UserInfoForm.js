@@ -11,7 +11,7 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
     clientState: '',
     clientZip: '',
     clientCompany: '',
-    clientWebsite: '', // Just a simple domain, no https:// required
+    clientWebsite: '', // Already exists in state
     marketingConsent: false
   });
 
@@ -102,15 +102,15 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
           />
         </div>
         
-        {/* Company Website Field - Changed from url to text type */}
+        {/* Add Website Field Here */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-[#F8F6F0]/70 mb-1">Company Website</label>
           <input
-            type="text" // Changed from url to text
+            type="text"
             name="clientWebsite"
             value={formData.clientWebsite}
             onChange={handleChange}
-            placeholder="example.com" // Changed placeholder to show simple domain format
+            placeholder="example.com"
             className="w-full p-3 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
           />
           <p className="mt-1 text-xs text-[#F8F6F0]/50">Just enter your domain name (e.g., example.com)</p>
