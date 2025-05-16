@@ -760,53 +760,26 @@ const handleAgreementSubmit = async (agreementData) => {
     // Save bundle data at step 2 (agreement)
     const finalBundleID = await saveToSupabase(2);
     
-    // Call the Netlify function to save agreement
-    const response = await fetch('/.netlify/functions/save-agreement', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        subLength,
-        finalMonthly: final.toFixed(2),
-        selectedServices: Object.entries(selectedTiers)
-          .filter(([, tier]) => tier)
-          .map(([product, tier]) => `${product}: ${tier}`)
-          .join(', '),
-        selectedTiers,
-        userInfo: userInfo,
-        agreementInfo: agreementData
-      })
-    });
+    // Format the selected services string
+    const selectedServicesStr = Object.entries(selectedTiers)
+      .filter(([, tier]) => tier)
+      .map(([product, tier]) => `${product}: ${tier}`)
+      .join(', ');
     
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Error response:', errorData);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    // Directly create query params for Stripe checkout
+    const queryParams = new URLSearchParams({
+      bundleID: finalBundleID,
+      bundleName: bundleName || 'My Bundle',
+      finalMonthly: final.toFixed(2),
+      subLength,
+      selectedServices: selectedServicesStr
+    }).toString();
     
-    const data = await response.json();
-    
-    if (data.redirectUrl) {
-      window.location.href = data.redirectUrl;
-    } else {
-      // Fallback direct redirect to Stripe checkout
-      const queryParams = new URLSearchParams({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        finalMonthly: final.toFixed(2),
-        subLength,
-        selectedServices: Object.entries(selectedTiers)
-          .filter(([, tier]) => tier)
-          .map(([product, tier]) => `${product}: ${tier}`)
-          .join(', ')
-      }).toString();
-      
-      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-    }
+    // Direct redirect to Stripe checkout
+    window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
   } catch (error) {
     console.error('Error:', error);
-    alert(`Error: ${error.message}. Please try again.`);
+    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
     setIsLoading(false);
   }
 };
