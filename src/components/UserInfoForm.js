@@ -11,7 +11,7 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
     clientState: '',
     clientZip: '',
     clientCompany: '',
-    clientWebsite: '', // Added website field
+    clientWebsite: '', // Just a simple domain, no https:// required
     marketingConsent: false
   });
 
@@ -35,7 +35,8 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
     if (!formData.clientCity.trim()) newErrors.clientCity = 'City is required';
     if (!formData.clientState.trim()) newErrors.clientState = 'State is required';
     if (!formData.clientZip.trim()) newErrors.clientZip = 'ZIP is required';
-    // Marketing consent is optional, no validation required
+    // Website is optional, no validation needed
+    // Marketing consent is optional, no validation needed
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -101,17 +102,18 @@ const UserInfoForm = ({ onSubmit, onCancel }) => {
           />
         </div>
         
-        {/* Company Website Field */}
+        {/* Company Website Field - Changed from url to text type */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-[#F8F6F0]/70 mb-1">Company Website</label>
           <input
-            type="url"
+            type="text" // Changed from url to text
             name="clientWebsite"
             value={formData.clientWebsite}
             onChange={handleChange}
-            placeholder="https://example.com"
+            placeholder="example.com" // Changed placeholder to show simple domain format
             className="w-full p-3 bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg text-[#F8F6F0] placeholder-[#F8F6F0]/40 focus:border-[#FFBA38]/50 focus:outline-none transition-colors"
           />
+          <p className="mt-1 text-xs text-[#F8F6F0]/50">Just enter your domain name (e.g., example.com)</p>
         </div>
         
         <div className="md:col-span-2">
