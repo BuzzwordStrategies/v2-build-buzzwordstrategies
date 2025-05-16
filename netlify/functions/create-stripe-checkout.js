@@ -92,28 +92,11 @@ exports.handler = async (event) => {
     console.log('Stripe session created:', session.id);
     console.log('Stripe checkout URL:', session.url);
     
-    // Redirect directly to Stripe
-    return {
-      statusCode: 303,
-      headers: {
-        Location: session.url,
-      },
-      body: JSON.stringify({
-        id: session.id,
-        url: session.url,
-        bundleID: finalBundleID
-      }),
-    };
-    
-  } catch (error) {
-    console.error('Error creating Stripe session:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ 
-        error: error.message,
-        type: error.type
-      })
-    };
-  }
+   // Redirect directly to Stripe
+return {
+  statusCode: 303,
+  headers: {
+    Location: session.url,
+  },
+  body: "", // Empty body for redirects
 };
