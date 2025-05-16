@@ -44,7 +44,7 @@ exports.handler = async (event) => {
       clientState: userInfo?.clientState,
       clientZip: userInfo?.clientZip,
       clientCompany: userInfo?.clientCompany || '',
-      clientWebsite: userInfo?.clientWebsite || '', // Added website field
+      clientWebsite: userInfo?.clientWebsite || '',
       marketingConsent: userInfo?.marketingConsent || false,
       agreementAccepted: agreementInfo?.agreeToTerms,
       agreementSignature: agreementInfo?.signatureName,
@@ -117,7 +117,7 @@ async function saveToSupabase(data) {
       customer_address: data.clientAddress ? `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}` : '',
       customer_phone: data.clientPhone,
       customer_company: data.clientCompany,
-      customer_website: data.clientWebsite, // Added website field
+      customer_website: data.clientWebsite,
       marketing_consent: data.marketingConsent,
       agreement_accepted: data.agreementAccepted,
       agreement_signature: data.agreementSignature,
