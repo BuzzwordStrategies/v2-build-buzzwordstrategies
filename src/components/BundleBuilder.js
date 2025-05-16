@@ -752,7 +752,7 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
-// Direct implementation that forcefully redirects to Stripe checkout
+// FIXED: Corrected handleAgreementSubmit function
 const handleAgreementSubmit = async (agreementData) => {
   setAgreementInfo(agreementData);
   setIsLoading(true);
@@ -811,20 +811,6 @@ const handleAgreementSubmit = async (agreementData) => {
       console.log('Fallback redirect to Stripe checkout');
       window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-    setIsLoading(false);
-  }
-};
-    
-    // Direct URL to Stripe checkout
-    const stripeCheckoutUrl = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-    console.log('Redirecting directly to Stripe checkout:', stripeCheckoutUrl);
-    
-    // Force window location change to Stripe checkout
-    window.location.href = stripeCheckoutUrl;
-    
   } catch (error) {
     console.error('Error:', error);
     alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
