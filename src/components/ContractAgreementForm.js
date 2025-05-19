@@ -509,7 +509,7 @@ const ContractAgreementForm = ({
       </div>
 
       {/* Privacy Policy Modal */}
-      <PrivacyPolicyModal />
+      {showPrivacyPolicy && <PrivacyPolicyModal />}
     </div>
   );
 };
