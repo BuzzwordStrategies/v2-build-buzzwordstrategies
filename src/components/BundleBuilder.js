@@ -583,12 +583,28 @@ const getBundleDiscount = (num) => {
   return discounts[num] || 10;
 };
 
+// Debounce function to prevent too many saves
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
 // Main component
 const BundleBuilder = () => {
   // Refs for scrolling
   const productsSectionRef = useRef(null);
   const tiersSectionRef = useRef(null);
   const pricingSectionRef = useRef(null);
+  
+  // Save timeout ref
+  const saveTimeoutRef = useRef(null);
 
   // State variables
   const [selectedTiers, setSelectedTiers] = useState({});
@@ -630,38 +646,9 @@ const BundleBuilder = () => {
 
   // Bundle ID state
   const [bundleID, setBundleID] = useState('');
-
-  // Helper function to get or create a bundle ID - ADDED THIS FUNCTION
-  const getOrCreateBundleID = useCallback(() => {
-    // If we already have a bundleID in state, use it
-    if (bundleID) {
-      console.log("Using existing bundleID from state:", bundleID);
-      return bundleID;
-    }
-    
-    // Check if we have a bundleID in localStorage
-    try {
-      const saved = localStorage.getItem("buzzwordBundle");
-      if (saved) {
-        const parsedData = JSON.parse(saved);
-        if (parsedData.bundleID) {
-          console.log("Using bundleID from localStorage:", parsedData.bundleID);
-          return parsedData.bundleID;
-        }
-      }
-    } catch (error) {
-      console.error("Error checking localStorage for bundleID:", error);
-    }
-    
-    // If we get here, we need to create a new bundleID
-    const newBundleID = `bwb-${uuidv4()}`;
-    console.log("Created new bundleID:", newBundleID);
-    
-    // Update state with the new bundleID
-    setBundleID(newBundleID);
-    
-    return newBundleID;
-  }, [bundleID]);
+  
+  // Flag to prevent initial saving
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Memoize calculation of final price to avoid recalculation on every render
   const calculateFinalPrice = useCallback(() => {
@@ -697,14 +684,22 @@ const BundleBuilder = () => {
   }, [selectedBusiness]);
 
   // Function to save bundle data to Supabase with error handling
-  const saveToSupabase = useCallback(async (step) => {
+  const saveToSupabase = useCallback(async (step, immediate = false) => {
+    // Don't save during initial load
+    if (!initialLoadComplete && !immediate) {
+      return bundleID;
+    }
+    
     try {
-      // Get current bundle data - MODIFIED TO USE getOrCreateBundleID
-      const currentBundleID = getOrCreateBundleID();
+      // Get current bundle data
+      // Don't create a new bundleID if we already have one
+      const currentBundleID = bundleID;
       
-      // Log the bundle ID for debugging
-      console.log(`Saving to Supabase with bundle ID: ${currentBundleID} (step: ${step})`);
-      
+      if (!currentBundleID) {
+        console.error('No bundleID found when trying to save to Supabase');
+        return null;
+      }
+        
       const selectedServices = Object.entries(selectedTiers)
         .filter(([, tier]) => tier)
         .map(([product, tier]) => `${product}: ${tier}`)
@@ -723,19 +718,13 @@ const BundleBuilder = () => {
         agreementInfo: step >= 2 ? agreementInfo : null
       };
 
-      // Log the full bundle data for debugging
-      console.log('Bundle data being saved:', JSON.stringify(bundleData, null, 2));
-
       // Save to either our Express server (if deployed) or use Netlify function
       try {
         // Try Express endpoint first
         await axios.post('/api/supabase/save-bundle', bundleData);
-        console.log('Saved to Express server');
       } catch (expressError) {
         // Fallback to Netlify function
-        console.log('Falling back to Netlify function', expressError);
         await axios.post('/.netlify/functions/save-bundle-data', bundleData);
-        console.log('Saved to Netlify function');
       }
 
       return currentBundleID;
@@ -743,7 +732,15 @@ const BundleBuilder = () => {
       console.error('Error saving bundle data:', error);
       return bundleID || null; // Return existing bundleID if there's an error
     }
-  }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, userInfo, agreementInfo, getOrCreateBundleID]);
+  }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, userInfo, agreementInfo, initialLoadComplete]);
+
+  // Debounced save function to prevent too many API calls
+  const debouncedSave = useCallback(
+    debounce((step) => {
+      saveToSupabase(step);
+    }, 2000),
+    [saveToSupabase]
+  );
 
   // Handle tier selection with improved error handling
   const handleTierSelect = useCallback(async (service, tier) => {
@@ -752,24 +749,11 @@ const BundleBuilder = () => {
       [service]: prev[service] === tier ? null : tier
     }));
     
-    // Save data when tiers are selected (after a short delay to let state update)
-    try {
-      // Use setTimeout to ensure state has updated
-      const timeoutId = setTimeout(async () => {
-        // Use the existing bundleID or create one if needed
-        if (!bundleID) {
-          const newBundleID = getOrCreateBundleID();
-          console.log(`Set bundleID to ${newBundleID} in handleTierSelect`);
-        }
-        await saveToSupabase(0);
-      }, 500);
-      
-      // Return cleanup function
-      return () => clearTimeout(timeoutId);
-    } catch (error) {
-      console.error('Error saving tier selection:', error);
+    // If we have a bundleID, save after a delay
+    if (bundleID && initialLoadComplete) {
+      debouncedSave(0);
     }
-  }, [bundleID, saveToSupabase, getOrCreateBundleID]);
+  }, [bundleID, debouncedSave, initialLoadComplete]);
 
   // Open modal for tier details
   const openTierDetailsModal = useCallback((service, tier) => {
@@ -798,58 +782,40 @@ const BundleBuilder = () => {
     setBundleRejected(false); // Reset if previously rejected
     
     try {
-      // Make sure we have a bundleID before proceeding
-      if (!bundleID) {
-        const newBundleID = getOrCreateBundleID();
-        console.log(`Set bundleID to ${newBundleID} in handleBundleConfirm`);
-      }
-      
       // Save bundle data at step 0 (bundle confirmation)
-      await saveToSupabase(0);
+      await saveToSupabase(0, true);
       setFormStep(1);
     } catch (error) {
       console.error('Error confirming bundle:', error);
       alert('There was an error saving your bundle. Please try again.');
     }
-  }, [subscriptionAcknowledged, saveToSupabase, bundleID, getOrCreateBundleID]);
+  }, [subscriptionAcknowledged, saveToSupabase]);
 
   const handleBundleReject = useCallback(() => {
     setBundleRejected(true);
     setShowPurchaseModal(false);
-    // You could log this rejection to Supabase here
   }, []);
 
   const handleUserInfoSubmit = useCallback(async (formData) => {
     try {
-      console.log('Received user info data:', formData);
       setUserInfo(formData);
       
-      // Ensure we have a bundleID
-      if (!bundleID) {
-        const newBundleID = getOrCreateBundleID();
-        console.log(`Set bundleID to ${newBundleID} in handleUserInfoSubmit`);
-      }
-      
       // Save bundle data at step 1 (user info)
-      await saveToSupabase(1);
+      await saveToSupabase(1, true);
       setFormStep(2); // Move to contract agreement
     } catch (error) {
       console.error('Error submitting user info:', error);
       alert('There was an error saving your information. Please try again.');
     }
-  }, [saveToSupabase, bundleID, getOrCreateBundleID]);
+  }, [saveToSupabase]);
 
   const handleAgreementSubmit = useCallback(async (agreementData) => {
     setAgreementInfo(agreementData);
     setIsLoading(true);
     
     try {
-      // Ensure we have a bundleID
-      const finalBundleID = bundleID || getOrCreateBundleID();
-      console.log(`Using bundleID ${finalBundleID} for agreement submission`);
-      
       // Save bundle data at step 2 (agreement)
-      await saveToSupabase(2);
+      const finalBundleID = await saveToSupabase(2, true);
       
       // Format the selected services string
       const selectedServicesStr = Object.entries(selectedTiers)
@@ -869,32 +835,21 @@ const BundleBuilder = () => {
         agreementInfo: agreementData // This now includes the PDF
       };
       
-      // Log the payload for debugging
-      console.log('Submitting agreement with payload:', {
-        ...payload,
-        agreementInfo: { ...payload.agreementInfo, agreementPdf: '(PDF data omitted)' }
-      });
-      
-      // Try the improved version first
+      // Try to save agreement
       try {
-        // Save agreement data with PDF to Supabase using improved function
+        // Save agreement data with PDF to Supabase
         const response = await axios.post('/.netlify/functions/save-agreement', payload);
         
         if (!response.data.success) {
           throw new Error(response.data.message || 'Failed to save agreement');
         }
         
-        console.log('Agreement saved successfully');
-        
         // Redirect to Stripe checkout
         window.location.href = response.data.redirectUrl;
-      } catch (improvedError) {
-        console.error('Error with save-agreement function:', improvedError);
+      } catch (error) {
+        console.error('Error:', error);
         
-        // Fall back to direct Stripe checkout
-        console.log('Falling back to direct Stripe checkout');
-        
-        // Direct redirect to Stripe checkout
+        // Direct redirect to Stripe checkout as fallback
         const queryParams = new URLSearchParams({
           bundleID: finalBundleID,
           bundleName: bundleName || 'My Bundle',
@@ -910,7 +865,7 @@ const BundleBuilder = () => {
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
       setIsLoading(false);
     }
-  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo, getOrCreateBundleID]);
+  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
 
   // Handle product selection with auto-scroll
   const handleProductSelect = useCallback((product) => {
@@ -923,32 +878,26 @@ const BundleBuilder = () => {
     }, 300);
   }, []);
 
-  // Initialize bundleID on mount - UPDATED THIS USEEFFECT
+  // Load saved bundle on mount with improved error handling
   useEffect(() => {
     try {
-      // Set up initial state from localStorage if available
       const saved = localStorage.getItem("buzzwordBundle");
       if (saved) {
         const parsedData = JSON.parse(saved);
-        
-        // Set all the state variables from saved data
         setSelectedTiers(parsedData.selectedTiers || {});
         setSubLength(parsedData.subLength || 3);
         setBundleName(parsedData.bundleName || "");
         setSelectedBusiness(parsedData.selectedBusiness || "");
         
-        // IMPORTANT: Set the bundleID from saved data if available
+        // Load bundleID if available
         if (parsedData.bundleID) {
-          console.log("Loading bundleID from localStorage:", parsedData.bundleID);
           setBundleID(parsedData.bundleID);
         } else {
           // If no bundleID in saved data, create a new one
           const newBundleID = `bwb-${uuidv4()}`;
-          console.log("Creating new bundleID on mount:", newBundleID);
           setBundleID(newBundleID);
         }
         
-        // Set the currently open service
         const firstService = Object.keys(parsedData.selectedTiers || {}).find(service => products.includes(service)) || products[0];
         setCurrentlyOpenService(firstService);
         
@@ -962,27 +911,31 @@ const BundleBuilder = () => {
       } else {
         // If no saved data, create a new bundleID
         const newBundleID = `bwb-${uuidv4()}`;
-        console.log("No saved data, creating new bundleID:", newBundleID);
         setBundleID(newBundleID);
       }
+      
+      // Mark initial load as complete after a short delay
+      setTimeout(() => {
+        setInitialLoadComplete(true);
+      }, 1000);
     } catch (e) {
       console.error("Error loading saved bundle:", e);
       
       // Create a new bundleID even if there's an error
       const newBundleID = `bwb-${uuidv4()}`;
-      console.log("Error occurred, creating new bundleID:", newBundleID);
       setBundleID(newBundleID);
+      setInitialLoadComplete(true);
     }
   }, []);
 
-  // Save bundle data with improved error handling - UPDATED THIS USEEFFECT
+  // Save bundle data with improved error handling
   useEffect(() => {
-    if (!bundleID) return; // Skip if bundleID is not set yet
+    if (!bundleID || !initialLoadComplete) return; // Skip if bundleID is not set yet or initial load isn't complete
     
     try {
       // Create bundle data object for localStorage
       const bundleData = {
-        bundleID, // IMPORTANT: Always include the bundleID
+        bundleID,
         selectedTiers,
         subLength,
         bundleName,
@@ -992,11 +945,10 @@ const BundleBuilder = () => {
       
       // Save to localStorage
       localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
-      console.log("Saved bundle data to localStorage with bundleID:", bundleID);
     } catch (error) {
       console.error("Error saving bundle to localStorage:", error);
     }
-  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final]);
+  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final, initialLoadComplete]);
 
   // Component for Performance Disclaimer Modal - extracted to improve readability
   const PerformanceDisclaimerModal = () => {
@@ -1269,14 +1221,10 @@ const BundleBuilder = () => {
                       setSelectedBusiness(type);
                       setCurrentStep(2); // Move to step 2 after selection
                       
-                      // Make sure we have a bundleID
-                      if (!bundleID) {
-                        const newBundleID = getOrCreateBundleID();
-                        console.log(`Set bundleID to ${newBundleID} from business selector`);
-                      }
-                      
                       // Save data after update
-                      setTimeout(() => saveToSupabase(0), 500);
+                      if (initialLoadComplete) {
+                        debouncedSave(0);
+                      }
                       
                       // Scroll to products section after a short delay
                       setTimeout(() => {
@@ -1358,14 +1306,10 @@ const BundleBuilder = () => {
                     const newValue = parseInt(e.target.value);
                     setSubLength(newValue);
                     
-                    // Make sure we have a bundleID
-                    if (!bundleID) {
-                      const newBundleID = getOrCreateBundleID();
-                      console.log(`Set bundleID to ${newBundleID} from subscription slider`);
-                    }
-                    
                     // Save data after update
-                    setTimeout(() => saveToSupabase(0), 500);
+                    if (initialLoadComplete) {
+                      debouncedSave(0);
+                    }
                   }}
                   className="w-full h-2 bg-[#2A2A2A] rounded-full appearance-none cursor-pointer accent-[#D28C00]"
                   style={{
@@ -1385,13 +1329,7 @@ const BundleBuilder = () => {
                 <div className="text-sm text-[#D28C00]/70 mb-3">Per Month</div>
                 {selected.length > 0 && (
                   <button
-                    onClick={async () => {
-                      // Make sure we have a bundleID before continuing
-                      if (!bundleID) {
-                        const newBundleID = getOrCreateBundleID();
-                        console.log(`Set bundleID to ${newBundleID} before showing purchase modal`);
-                      }
-                      
+                    onClick={() => {
                       setShowPurchaseModal(true);
                       pricingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
                     }}
@@ -1618,9 +1556,9 @@ const BundleBuilder = () => {
                   onChange={(e) => {
                     setBundleName(e.target.value);
                     
-                    // Save after a delay
-                    if (bundleID) {
-                      setTimeout(() => saveToSupabase(0), 1000);
+                    // Debounce save for bundle name
+                    if (initialLoadComplete) {
+                      debouncedSave(0);
                     }
                   }}
                   className="w-full p-4 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg mb-6 text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors"
