@@ -12,7 +12,13 @@ exports.handler = async (event) => {
   try {
     // Parse and validate the incoming data
     const data = JSON.parse(event.body);
-    console.log('Received data:', JSON.stringify(data, null, 2));
+    console.log('Received data:', JSON.stringify({
+      ...data,
+      agreementInfo: data.agreementInfo ? {
+        ...data.agreementInfo,
+        agreementPdf: data.agreementInfo.agreementPdf ? '(Base64 PDF data omitted for logging)' : null
+      } : null
+    }, null, 2));
     
     if (!data.bundleID) {
       return { 
@@ -37,33 +43,112 @@ exports.handler = async (event) => {
 
     // Save to Supabase
     console.log('Saving agreement data to Supabase...');
-    const saveResult = await saveToSupabase({
-      bundleID: finalBundleID,
-      bundleName,
-      subLength,
-      finalMonthly,
-      selectedServices,
-      selectedTiers: selectedTiers ? JSON.stringify(selectedTiers) : '{}',
-      clientName: userInfo?.clientName,
-      clientEmail: userInfo?.clientEmail,
-      clientPhone: userInfo?.clientPhone,
-      clientAddress: userInfo?.clientAddress,
-      clientCity: userInfo?.clientCity,
-      clientState: userInfo?.clientState,
-      clientZip: userInfo?.clientZip,
-      clientCompany: userInfo?.clientCompany || '',
-      clientWebsite: userInfo?.clientWebsite || '',
-      marketingConsent: userInfo?.marketingConsent || false,
-      agreementAccepted: agreementInfo?.agreeToTerms,
-      agreementSignature: agreementInfo?.signatureName,
-      agreementDate: agreementInfo?.agreementDate,
-      agreementPdf: agreementInfo?.agreementPdf, // Base64 encoded PDF
-      agreementFilename: agreementInfo?.agreementFilename || 
-        `agreement_${finalBundleID}_${new Date().toISOString().split('T')[0]}.pdf`,
-      status: 'agreement_signed'
-    });
     
-    console.log('Supabase save result:', saveResult);
+    try {
+      // Prepare data for Supabase
+      const orderData = {
+        bundle_id: finalBundleID,
+        bundle_name: bundleName || 'My Bundle',
+        sub_length: parseInt(subLength) || 3,
+        final_monthly: parseFloat(finalMonthly) || 0,
+        selected_services: selectedServices || '',
+        selected_tiers: selectedTiers ? JSON.stringify(selectedTiers) : '{}',
+        customer_name: userInfo?.clientName || '',
+        customer_email: userInfo?.clientEmail || '',
+        customer_phone: userInfo?.clientPhone || '',
+        customer_address: userInfo?.clientAddress || '',
+        customer_city: userInfo?.clientCity || '',
+        customer_state: userInfo?.clientState || '',
+        customer_zip: userInfo?.clientZip || '',
+        customer_company: userInfo?.clientCompany || '',
+        customer_website: userInfo?.clientWebsite || '',
+        marketing_consent: userInfo?.marketingConsent || false,
+        agreement_accepted: !!agreementInfo?.agreeToTerms,
+        agreement_signature: agreementInfo?.signatureName || '',
+        agreement_date: agreementInfo?.agreementDate || new Date().toISOString().split('T')[0],
+        status: 'agreement_signed',
+        updated_at: new Date().toISOString()
+      };
+      
+      // Handle PDF separately to avoid potential issues
+      // Check if PDF needs to be stored
+      if (agreementInfo?.agreementPdf) {
+        // Add PDF data - but check length first
+        if (agreementInfo.agreementPdf.length > 500000) {
+          console.log('PDF data is very large, consider alternative storage solution');
+          // For extremely large PDFs, you might want to compress or use Supabase Storage instead
+        }
+        
+        orderData.agreement_pdf = agreementInfo.agreementPdf;
+        orderData.agreement_filename = agreementInfo?.agreementFilename || 
+          `agreement_${finalBundleID}_${new Date().toISOString().split('T')[0]}.pdf`;
+      }
+      
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+      
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+        throw new Error('Supabase credentials not found');
+      }
+      
+      console.log('Using Supabase URL:', SUPABASE_URL);
+      
+      // Check if record already exists
+      const checkResponse = await axios.get(
+        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
+          }
+        }
+      );
+      
+      let response;
+      
+      if (checkResponse.data && checkResponse.data.length > 0) {
+        // Update existing record
+        console.log('Updating existing record');
+        response = await axios.patch(
+          `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
+          orderData,
+          {
+            headers: {
+              'apikey': SUPABASE_SERVICE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            }
+          }
+        );
+      } else {
+        // Create new record
+        console.log('Creating new record');
+        orderData.created_at = new Date().toISOString();
+        
+        response = await axios.post(
+          `${SUPABASE_URL}/rest/v1/pending_orders`,
+          orderData,
+          {
+            headers: {
+              'apikey': SUPABASE_SERVICE_KEY,
+              'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            }
+          }
+        );
+      }
+      
+      console.log('Supabase API response status:', response.status);
+    } catch (supabaseError) {
+      console.error('Error saving to Supabase:', supabaseError.message);
+      console.error('Response data:', supabaseError.response?.data);
+      console.error('Status code:', supabaseError.response?.status);
+      
+      // Continue anyway since we want to redirect to payment
+      console.log('Continuing to payment despite Supabase error');
+    }
 
     // Create redirect URL to Stripe checkout
     console.log('Creating Stripe checkout URL...');
@@ -82,7 +167,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({ 
         success: true,
-        message: "Agreement successfully saved",
+        message: "Agreement successfully processed",
         redirectUrl: stripe_checkout_url,
         bundleID: finalBundleID
       })
@@ -101,115 +186,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
-// Function to save data to Supabase
-async function saveToSupabase(data) {
-  console.log('Starting saveToSupabase function');
-  
-  try {
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-    
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-      console.warn('Supabase credentials not found, skipping database save');
-      return { status: 'skipped', reason: 'missing_credentials' };
-    }
-    
-    // Format the data for Supabase
-    const orderData = {
-      bundle_id: data.bundleID,
-      bundle_name: data.bundleName || 'My Bundle',
-      sub_length: parseInt(data.subLength) || 3,
-      final_monthly: parseFloat(data.finalMonthly) || 0,
-      selected_services: data.selectedServices || '',
-      selected_tiers: data.selectedTiers || '{}',
-      customer_email: data.clientEmail || '',
-      customer_name: data.clientName || '',
-      customer_address: data.clientAddress ? 
-        `${data.clientAddress}, ${data.clientCity || ''}, ${data.clientState || ''} ${data.clientZip || ''}`.trim() : '',
-      customer_phone: data.clientPhone || '',
-      customer_company: data.clientCompany || '',
-      customer_website: data.clientWebsite || '',
-      marketing_consent: !!data.marketingConsent,
-      agreement_accepted: !!data.agreementAccepted,
-      agreement_signature: data.agreementSignature || '',
-      agreement_date: data.agreementDate || new Date().toISOString().split('T')[0],
-      agreement_pdf: data.agreementPdf || null,
-      agreement_filename: data.agreementFilename || '',
-      status: data.status || 'in_progress',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('Sending data to Supabase:', JSON.stringify({
-      ...orderData,
-      agreement_pdf: orderData.agreement_pdf ? '(Base64 PDF data omitted for logging)' : null
-    }, null, 2));
-    
-    console.log('Supabase URL:', SUPABASE_URL);
-    
-    // Check if bundle already exists
-    const checkResponse = await axios.get(
-      `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${data.bundleID}`,
-      {
-        headers: {
-          'apikey': SUPABASE_SERVICE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
-        }
-      }
-    );
-    
-    let response;
-    
-    if (checkResponse.data && checkResponse.data.length > 0) {
-      // Update existing record
-      console.log('Updating existing record');
-      response = await axios.patch(
-        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${data.bundleID}`,
-        orderData,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
-        }
-      );
-    } else {
-      // Create new record
-      console.log('Creating new record');
-      response = await axios.post(
-        `${SUPABASE_URL}/rest/v1/pending_orders`,
-        orderData,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
-        }
-      );
-    }
-    
-    console.log('Supabase API response status:', response.status);
-    console.log('Supabase API response data:', JSON.stringify(response.data, null, 2));
-    
-    return {
-      status: 'success',
-      data: response.data
-    };
-  } catch (error) {
-    console.error('Error in saveToSupabase function:', error);
-    console.error('Error response:', error.response?.data);
-    console.error('Error message:', error.message);
-    
-    throw {
-      status: 'error',
-      message: error.message,
-      response: error.response?.data,
-      stack: error.stack
-    };
-  }
-}
