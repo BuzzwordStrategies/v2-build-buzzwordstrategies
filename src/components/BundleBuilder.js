@@ -1133,36 +1133,50 @@ const BundleBuilder = () => {
               </div>
             </div>
             
-            {/* Business Selector */}
-            <div className="flex flex-col items-center gap-3 w-full">
-              <span className="text-sm text-[#D28C00]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
-              <div className="flex flex-wrap gap-3 justify-center px-2">
-                {businessTypes.map(type => (
-                  <button
-                    key={type}
-                    onClick={() => handleIndustrySelect(type)}
-                    className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
-                      selectedBusiness === type
-                        ? 'bg-[#D28C00] text-[#1A1A1A] font-medium shadow-lg shadow-[#D28C00]/20'
-                        : 'bg-[#2A2A2A] text-white hover:bg-[#2A2A2A]/80 border border-gray-700'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-              {selectedBusiness && (
-                <div className="flex items-center mt-2 animate-pulse">
-                  <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  <span className="text-sm text-white">Scroll down to select your services</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Business Selector */}
+<div className="flex flex-col items-center gap-3 w-full">
+  <span className="text-sm text-[#D28C00]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
+  <div className="flex flex-wrap gap-3 justify-center px-2">
+    {businessTypes.map(type => (
+      <button
+        key={type}
+        onClick={() => {
+          // Inline implementation instead of using handleIndustrySelect
+          setSelectedBusiness(type);
+          setCurrentStep(2); // Move to step 2 after selection
+          
+          // Save data after update if bundleID exists
+          if (bundleID) {
+            setTimeout(() => saveToSupabase(0), 500);
+          }
+          
+          // Scroll to products section after a short delay
+          setTimeout(() => {
+            productsSectionRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 300);
+        }}
+        className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
+          selectedBusiness === type
+            ? 'bg-[#D28C00] text-[#1A1A1A] font-medium shadow-lg shadow-[#D28C00]/20'
+            : 'bg-[#2A2A2A] text-white hover:bg-[#2A2A2A]/80 border border-gray-700'
+        }`}
+      >
+        {type}
+      </button>
+    ))}
+  </div>
+  {selectedBusiness && (
+    <div className="flex items-center mt-2 animate-pulse">
+      <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+      <span className="text-sm text-white">Scroll down to select your services</span>
+    </div>
+  )}
+</div>
 
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-[#D28C00]/10">
