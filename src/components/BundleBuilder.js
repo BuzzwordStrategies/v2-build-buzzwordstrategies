@@ -1,11 +1,12 @@
 // src/components/BundleBuilder.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import UserInfoForm from './UserInfoForm';
 import ContractAgreementForm from './ContractAgreementForm';
 import axios from 'axios';
 
-// Products array outside component to avoid re-creation on each render
+// Move all static data outside the component
+// Products array 
 const products = [
   "Meta Ads", "Google Ads", "TikTok Ads", "SEO",
   "GBP Ranker", "Backlinks", "Content", "Social Posts"
@@ -35,542 +36,559 @@ const serviceSuccessStories = {
   "Social Posts": "A fitness studio increased their social following by 324% in 6 months while generating consistent client referrals through engagement. Social media success depends on content quality and audience engagement."
 };
 
+// Product and pricing data
+const pricing = {
+  "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
+  "Google Ads": { Base: 770, Standard: 980, Premium: 1410 },
+  "TikTok Ads": { Base: 770, Standard: 980, Premium: 1410 },
+  "SEO": { Base: 790, Standard: 1000, Premium: 1450 },
+  "GBP Ranker": { Base: 315, Standard: 420, Premium: 675 },
+  "Backlinks": { Base: 420, Standard: 630, Premium: 990 },
+  "Content": { Base: 210, Standard: 420, Premium: 760 },
+  "Social Posts": { Base: 315, Standard: 525, Premium: 895 }
+};
+
+const businessTypes = ["Dental Clinic", "Dental Lab", "Small Business", "Fitness", "Something Else"];
+
+// Industry-specific tier descriptions
+const bestForIndustry = {
+  // Dental Clinic descriptions
+  "Dental Clinic": {
+    "Meta Ads": {
+      Base: "Want to fill empty chairs & attract patients seeking routine care",
+      Standard: "Ready to book high-value procedures like implants & ortho", 
+      Premium: "Need to improve visibility and expand to new locations"
+    },
+    "Google Ads": {
+      Base: "Want patients searching 'dentist near me' to find you first",
+      Standard: "Ready to capture searches for profitable specialties",
+      Premium: "Need to improve visibility for dental search terms in your city"
+    },
+    "TikTok Ads": {
+      Base: "Want to attract younger patients with engaging content",
+      Standard: "Ready to showcase smile transformations that go viral",
+      Premium: "Need to build a recognizable brand across regions"
+    },
+    "SEO": {
+      Base: "Want your website to show up in local dental searches",
+      Standard: "Ready to rank #1 for implants, veneers & orthodontics",
+      Premium: "Need to improve visibility for every dental keyword in your market"
+    },
+    "GBP Ranker": {
+      Base: "Want more 5-star reviews & better Google Maps visibility",
+      Standard: "Ready to be the top choice when patients compare clinics",
+      Premium: "Need to improve local search visibility"
+    },
+    "Backlinks": {
+      Base: "Want Google to see your practice as trustworthy",
+      Standard: "Ready to outrank established competitors",
+      Premium: "Need enhanced authority in your market"
+    },
+    "Content": {
+      Base: "Want to educate patients & build trust online",
+      Standard: "Ready to be seen as the dental expert in your area",
+      Premium: "Need to be the go-to resource for dental information"
+    },
+    "Social Posts": {
+      Base: "Want to stay connected with current patients",
+      Standard: "Ready to showcase before/after results daily",
+      Premium: "Need an always-active social presence that converts"
+    }
+  },
+  // Dental Lab descriptions
+  "Dental Lab": {
+    "Meta Ads": {
+      Base: "Want local dentists to discover your lab services",
+      Standard: "Ready to expand beyond your current service area",
+      Premium: "Need to be highly visible nationwide"
+    },
+    "Google Ads": {
+      Base: "Want dentists searching for labs to find you first",
+      Standard: "Ready to promote digital dentistry capabilities",
+      Premium: "Need to improve visibility for dental lab searches"
+    },
+    "TikTok Ads": {
+      Base: "Want to showcase your craftsmanship to dentists",
+      Standard: "Ready to demonstrate cutting-edge technology",
+      Premium: "Need to be seen as the innovation leader"
+    },
+    "SEO": {
+      Base: "Want dentists to find your lab when researching options",
+      Standard: "Ready to rank for all major lab services",
+      Premium: "Need to improve visibility in dental lab search results"
+    },
+    "GBP Ranker": {
+      Base: "Want better visibility when dentists search locally",
+      Standard: "Ready to stand out from competing labs",
+      Premium: "Need to improve regional lab search results"
+    },
+    "Backlinks": {
+      Base: "Want search engines to trust your lab website",
+      Standard: "Ready to build industry-wide recognition",
+      Premium: "Need enhanced authority in dental technology"
+    },
+    "Content": {
+      Base: "Want to share technical expertise with dentists",
+      Standard: "Ready to publish case studies that attract clients",
+      Premium: "Need to be the thought leader in dental technology"
+    },
+    "Social Posts": {
+      Base: "Want to showcase completed cases regularly",
+      Standard: "Ready to engage the dental community daily",
+      Premium: "Need to be highly visible on social media"
+    }
+  },
+  // Small Business descriptions
+  "Small Business": {
+    "Meta Ads": {
+      Base: "Want to test if social media can bring customers",
+      Standard: "Ready to scale what's working & reach more people",
+      Premium: "Need to maximize every opportunity for growth"
+    },
+    "Google Ads": {
+      Base: "Want your first consistent source of new leads",
+      Standard: "Ready to expand services & capture more searches",
+      Premium: "Need to improve visibility online"
+    },
+    "TikTok Ads": {
+      Base: "Want to see if viral content can grow your business",
+      Standard: "Ready to build a community around your brand",
+      Premium: "Need to scale viral success into real revenue"
+    },
+    "SEO": {
+      Base: "Want customers to find you instead of competitors",
+      Standard: "Ready to rank for multiple services & locations",
+      Premium: "Need to be highly visible online"
+    },
+    "GBP Ranker": {
+      Base: "Want better reviews & local search visibility",
+      Standard: "Ready to be the obvious choice in your area",
+      Premium: "Need to improve local search visibility across regions"
+    },
+    "Backlinks": {
+      Base: "Want Google to see you as a legitimate business",
+      Standard: "Ready to build authority in your industry",
+      Premium: "Need strong online credibility"
+    },
+    "Content": {
+      Base: "Want to start attracting customers with helpful content",
+      Standard: "Ready to be seen as an industry expert",
+      Premium: "Need to be the leading voice in your field"
+    },
+    "Social Posts": {
+      Base: "Want to build initial social media presence",
+      Standard: "Ready for consistent engagement & growth",
+      Premium: "Need social media to drive significant revenue"
+    }
+  },
+  // Fitness descriptions
+  "Fitness": {
+    "Meta Ads": {
+      Base: "Want to fill classes & attract new members locally",
+      Standard: "Ready to promote specialty programs & trainers",
+      Premium: "Need to scale membership across locations"
+    },
+    "Google Ads": {
+      Base: "Want people searching 'gym near me' to find you",
+      Standard: "Ready to promote personal training & programs",
+      Premium: "Need to improve visibility for fitness-related searches"
+    },
+    "TikTok Ads": {
+      Base: "Want to showcase your gym culture & energy",
+      Standard: "Ready to build a fitness community online",
+      Premium: "Need viral transformation content at scale"
+    },
+    "SEO": {
+      Base: "Want to rank when people search for local gyms",
+      Standard: "Ready to rank for specific programs & classes",
+      Premium: "Need to improve visibility for fitness searches in your market"
+    },
+    "GBP Ranker": {
+      Base: "Want better visibility in local gym searches",
+      Standard: "Ready to showcase all your classes & amenities",
+      Premium: "Need to improve local fitness search results"
+    },
+    "Backlinks": {
+      Base: "Want search engines to trust your fitness brand",
+      Standard: "Ready to build authority in the fitness space",
+      Premium: "Need strong online fitness authority"
+    },
+    "Content": {
+      Base: "Want to share workout tips & gym updates",
+      Standard: "Ready to be the local fitness knowledge source",
+      Premium: "Need to be the ultimate fitness resource"
+    },
+    "Social Posts": {
+      Base: "Want to showcase member success stories",
+      Standard: "Ready for daily motivation & class highlights",
+      Premium: "Need non-stop engaging fitness content"
+    }
+  },
+  // Generic "Something Else" descriptions
+  "Something Else": {
+    "Meta Ads": {
+      Base: "Get started with targeted social media advertising",
+      Standard: "Scale successful campaigns & reach your ideal audience",
+      Premium: "Maximize reach & improve market visibility through social"
+    },
+    "Google Ads": {
+      Base: "Start capturing customers actively searching for your offerings",
+      Standard: "Expand visibility across search networks & capture more demand",
+      Premium: "Improve visibility in search results for relevant traffic"
+    },
+    "TikTok Ads": {
+      Base: "Test viral marketing & reach new audiences",
+      Standard: "Build engaged community & consistent content strategy",
+      Premium: "Lead your industry with viral content at scale"
+    },
+    "SEO": {
+      Base: "Improve visibility in organic search results",
+      Standard: "Rank for competitive keywords & multiple service areas",
+      Premium: "Achieve improved visibility in your industry"
+    },
+    "GBP Ranker": {
+      Base: "Enhance local visibility & gather more reviews",
+      Standard: "Become the preferred choice in local searches",
+      Premium: "Improve local search visibility across all service areas"
+    },
+    "Backlinks": {
+      Base: "Build initial domain authority & credibility",
+      Standard: "Establish strong industry presence & trust",
+      Premium: "Achieve enhanced authority in your market"
+    },
+    "Content": {
+      Base: "Start attracting customers with valuable content",
+      Standard: "Position yourself as an industry thought leader",
+      Premium: "Become the definitive resource in your field"
+    },
+    "Social Posts": {
+      Base: "Establish consistent social media presence",
+      Standard: "Drive engagement & build loyal following",
+      Premium: "Transform social media into a revenue engine"
+    }
+  }
+};
+
+// Generic best for (fallback)
+const genericBestFor = {
+  "Meta Ads": {
+    Base: "Want to test if social ads can grow your business",
+    Standard: "Ready to scale successful campaigns & reach more customers",
+    Premium: "Need maximum reach & sophisticated targeting"
+  },
+  "Google Ads": {
+    Base: "Want your first reliable source of online leads",
+    Standard: "Ready to expand reach & capture more searches",
+    Premium: "Need to improve visibility in search results"
+  },
+  "TikTok Ads": {
+    Base: "Want to explore viral marketing potential",
+    Standard: "Ready to build an engaged community",
+    Premium: "Need to scale viral content into revenue"
+  },
+  "SEO": {
+    Base: "Want to be found online by potential customers",
+    Standard: "Ready to outrank your competition",
+    Premium: "Need to improve visibility in relevant searches"
+  },
+  "GBP Ranker": {
+    Base: "Want better local search visibility",
+    Standard: "Ready to become the top local choice",
+    Premium: "Need to improve local search results"
+  },
+  "Backlinks": {
+    Base: "Want Google to trust your website more",
+    Standard: "Ready to build serious online authority",
+    Premium: "Need strong search visibility"
+  },
+  "Content": {
+    Base: "Want to start attracting customers with content",
+    Standard: "Ready to establish thought leadership",
+    Premium: "Need to be the industry's go-to resource"
+  },
+  "Social Posts": {
+    Base: "Want to build initial social presence",
+    Standard: "Ready for consistent social engagement",
+    Premium: "Need social media as a revenue driver"
+  }
+};
+
+// Detailed tier features
+const detailedFeatures = {
+  "Google Ads": {
+    Base: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
+      budget: "Recommended Media Budget: $0–$2,500 monthly paid directly to Google",
+      features: [
+        "• Strategic search and display campaign development",
+        "• Professional keyword research and selection",
+        "• Google Ads pixel implementation",
+        "• Custom ad creation with extensions",
+        "• Weekly performance analysis and reporting"
+      ]
+    },
+    Standard: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
+      budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to Google",
+      features: [
+        "• Includes all Base tier services",
+        "• Advanced keyword expansion strategies",
+        "• Comprehensive A/B testing protocols",
+        "• Sophisticated remarketing campaigns",
+        "• Bi-weekly optimization consultations"
+      ]
+    },
+    Premium: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
+      budget: "Recommended Media Budget: $5,000+ monthly paid directly to Google",
+      features: [
+        "• Includes all Standard tier services",
+        "• Performance Max campaign deployment",
+        "• Dedicated account strategist",
+        "• Full-funnel conversion optimization",
+        "• Weekly executive strategy sessions"
+      ]
+    }
+  },
+  "Meta Ads": {
+    Base: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
+      budget: "Recommended Media Budget: $0–$2,500 monthly paid directly to Meta",
+      features: [
+        "• Comprehensive campaign strategy development",
+        "• Three custom-designed ad creatives",
+        "• Facebook pixel installation and configuration",
+        "• Precision audience targeting",
+        "• Weekly performance monitoring"
+      ]
+    },
+    Standard: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
+      budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to Meta",
+      features: [
+        "• Includes all Base tier services",
+        "• Six professional ad creatives",
+        "• Advanced retargeting implementation",
+        "• Lookalike audience development",
+        "• Bi-weekly performance optimization"
+      ]
+    },
+    Premium: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
+      budget: "Recommended Media Budget: $5,000+ monthly paid directly to Meta",
+      features: [
+        "• Includes all Standard tier services",
+        "• Nine or more premium ad creatives",
+        "• Comprehensive full-funnel campaigns",
+        "• Advanced conversion tracking systems",
+        "• Weekly strategic advisory sessions"
+      ]
+    }
+  },
+  "TikTok Ads": {
+    Base: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
+      budget: "Recommended Media Budget: $500–$2,500 monthly paid directly to TikTok",
+      features: [
+        "• Strategic campaign architecture",
+        "• TikTok pixel integration",
+        "• Audience segmentation and targeting",
+        "• Professional ad copywriting",
+        "• Monthly budget allocation guidance"
+      ]
+    },
+    Standard: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
+      budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to TikTok",
+      features: [
+        "• Includes all Base tier services",
+        "• Creative testing methodology",
+        "• Custom audience development",
+        "• Performance optimization protocols",
+        "• Bi-weekly analytics reporting"
+      ]
+    },
+    Premium: {
+      disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
+      budget: "Recommended Media Budget: $5,000+ monthly paid directly to TikTok",
+      features: [
+        "• Includes all Standard tier services",
+        "• User-generated content coordination",
+        "• Advanced targeting strategies",
+        "• Comprehensive analytics dashboard",
+        "• Weekly optimization consultations"
+      ]
+    }
+  },
+  "SEO": {
+    Base: {
+      features: [
+        "• 10 strategically selected keywords",
+        "• Google Analytics configuration",
+        "• XML sitemap development",
+        "• Foundational on-page optimization",
+        "• Monthly ranking reports"
+      ]
+    },
+    Standard: {
+      features: [
+        "• Includes all Base tier services",
+        "• 20 targeted keywords",
+        "• Technical SEO audit",
+        "• Content optimization strategy",
+        "• Competitive analysis"
+      ]
+    },
+    Premium: {
+      features: [
+        "• Includes all Standard tier services",
+        "• 40 high-value keywords",
+        "• Advanced link building strategy",
+        "• Local SEO optimization",
+        "• Quarterly strategic reviews"
+      ]
+    }
+  },
+  "GBP Ranker": {
+    Base: {
+      features: [
+        "• One optimized image weekly",
+        "• Monthly Q&A content",
+        "• AI-powered review responses",
+        "• Profile optimization",
+        "• Basic ranking analytics"
+      ]
+    },
+    Standard: {
+      features: [
+        "• Includes all Base tier services",
+        "• Three optimized images weekly",
+        "• Bi-weekly Q&A content",
+        "• Enhanced AI response system",
+        "• Category optimization"
+      ]
+    },
+    Premium: {
+      features: [
+        "• Includes all Standard tier services",
+        "• Daily image optimization",
+        "• Weekly Q&A content",
+        "• Human-verified responses",
+        "• Multi-location management"
+      ]
+    }
+  },
+  "Backlinks": {
+    Base: {
+      features: [
+        "• 10 high-quality backlinks monthly",
+        "• DA 10+ domain selection",
+        "• Diverse link portfolio",
+        "• Natural anchor text distribution",
+        "• Monthly link acquisition report"
+      ]
+    },
+    Standard: {
+      features: [
+        "• Includes all Base tier services",
+        "• 15 premium backlinks monthly",
+        "• DA 30+ domain selection",
+        "• 500-word guest articles",
+        "• Competitor link analysis"
+      ]
+    },
+    Premium: {
+      features: [
+        "• Includes all Standard tier services",
+        "• 20 authority backlinks monthly",
+        "• DA 50+ domain selection",
+        "• 1,000-word guest articles",
+        "• Strategic link planning"
+      ]
+    }
+  },
+  "Content": {
+    Base: {
+      features: [
+        "• One professional article monthly",
+        "• 500-word composition",
+        "• SEO optimization",
+        "• Human editorial review",
+        "• Blog publication service"
+      ]
+    },
+    Standard: {
+      features: [
+        "• Includes all Base tier services",
+        "• Two articles monthly",
+        "• 1,000 words per article",
+        "• Keyword research integration",
+        "• Internal linking strategy"
+      ]
+    },
+    Premium: {
+      features: [
+        "• Includes all Standard tier services",
+        "• Four articles monthly",
+        "• 2,000 words per article",
+        "• Topic clustering strategy",
+        "• Content calendar development"
+      ]
+    }
+  },
+  "Social Posts": {
+    Base: {
+      features: [
+        "• Four posts monthly",
+        "• Single platform focus",
+        "• Licensed imagery",
+        "• Strategic scheduling",
+        "• Monthly analytics report"
+      ]
+    },
+    Standard: {
+      features: [
+        "• Includes all Base tier services",
+        "• 16 posts monthly",
+        "• Three platform distribution",
+        "• Custom graphics design",
+        "• Engagement monitoring"
+      ]
+    },
+    Premium: {
+      features: [
+        "• Includes all Standard tier services",
+        "• 28 posts monthly",
+        "• Six platform coverage",
+        "• Video content creation",
+        "• Community management"
+      ]
+    }
+  }
+};
+
+// Helper functions moved outside component for better performance
+// Calculate discounts
+const getSubscriptionDiscount = (months) => {
+  const discounts = {
+    3: 0, 6: 2, 9: 3.5, 12: 5, 15: 6.5, 18: 8, 21: 9, 24: 10
+  };
+  return discounts[months] || 0;
+};
+
+const getBundleDiscount = (num) => {
+  const discounts = {
+    0: 0, 1: 0, 2: 1, 3: 2.5, 4: 4, 5: 5.5, 6: 7, 7: 8.5, 8: 10
+  };
+  return discounts[num] || 10;
+};
+
+// Main component
 const BundleBuilder = () => {
   // Refs for scrolling
   const productsSectionRef = useRef(null);
   const tiersSectionRef = useRef(null);
   const pricingSectionRef = useRef(null);
-  
-  // Product and pricing data
-  const pricing = {
-    "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
-    "Google Ads": { Base: 770, Standard: 980, Premium: 1410 },
-    "TikTok Ads": { Base: 770, Standard: 980, Premium: 1410 },
-    "SEO": { Base: 790, Standard: 1000, Premium: 1450 },
-    "GBP Ranker": { Base: 315, Standard: 420, Premium: 675 },
-    "Backlinks": { Base: 420, Standard: 630, Premium: 990 },
-    "Content": { Base: 210, Standard: 420, Premium: 760 },
-    "Social Posts": { Base: 315, Standard: 525, Premium: 895 }
-  };
-
-  const businessTypes = ["Dental Clinic", "Dental Lab", "Small Business", "Fitness", "Something Else"];
-
-  // Industry-specific tier descriptions
-  const bestForIndustry = {
-    // Dental Clinic descriptions
-    "Dental Clinic": {
-      "Meta Ads": {
-        Base: "Want to fill empty chairs & attract patients seeking routine care",
-        Standard: "Ready to book high-value procedures like implants & ortho", 
-        Premium: "Need to improve visibility and expand to new locations"
-      },
-      "Google Ads": {
-        Base: "Want patients searching 'dentist near me' to find you first",
-        Standard: "Ready to capture searches for profitable specialties",
-        Premium: "Need to improve visibility for dental search terms in your city"
-      },
-      "TikTok Ads": {
-        Base: "Want to attract younger patients with engaging content",
-        Standard: "Ready to showcase smile transformations that go viral",
-        Premium: "Need to build a recognizable brand across regions"
-      },
-      "SEO": {
-        Base: "Want your website to show up in local dental searches",
-        Standard: "Ready to rank #1 for implants, veneers & orthodontics",
-        Premium: "Need to improve visibility for every dental keyword in your market"
-      },
-      "GBP Ranker": {
-        Base: "Want more 5-star reviews & better Google Maps visibility",
-        Standard: "Ready to be the top choice when patients compare clinics",
-        Premium: "Need to improve local search visibility"
-      },
-      "Backlinks": {
-        Base: "Want Google to see your practice as trustworthy",
-        Standard: "Ready to outrank established competitors",
-        Premium: "Need enhanced authority in your market"
-      },
-      "Content": {
-        Base: "Want to educate patients & build trust online",
-        Standard: "Ready to be seen as the dental expert in your area",
-        Premium: "Need to be the go-to resource for dental information"
-      },
-      "Social Posts": {
-        Base: "Want to stay connected with current patients",
-        Standard: "Ready to showcase before/after results daily",
-        Premium: "Need an always-active social presence that converts"
-      }
-    },
-    // Dental Lab descriptions
-    "Dental Lab": {
-      "Meta Ads": {
-        Base: "Want local dentists to discover your lab services",
-        Standard: "Ready to expand beyond your current service area",
-        Premium: "Need to be highly visible nationwide"
-      },
-      "Google Ads": {
-        Base: "Want dentists searching for labs to find you first",
-        Standard: "Ready to promote digital dentistry capabilities",
-        Premium: "Need to improve visibility for dental lab searches"
-      },
-      "TikTok Ads": {
-        Base: "Want to showcase your craftsmanship to dentists",
-        Standard: "Ready to demonstrate cutting-edge technology",
-        Premium: "Need to be seen as the innovation leader"
-      },
-      "SEO": {
-        Base: "Want dentists to find your lab when researching options",
-        Standard: "Ready to rank for all major lab services",
-        Premium: "Need to improve visibility in dental lab search results"
-      },
-      "GBP Ranker": {
-        Base: "Want better visibility when dentists search locally",
-        Standard: "Ready to stand out from competing labs",
-        Premium: "Need to improve regional lab search results"
-      },
-      "Backlinks": {
-        Base: "Want search engines to trust your lab website",
-        Standard: "Ready to build industry-wide recognition",
-        Premium: "Need enhanced authority in dental technology"
-      },
-      "Content": {
-        Base: "Want to share technical expertise with dentists",
-        Standard: "Ready to publish case studies that attract clients",
-        Premium: "Need to be the thought leader in dental technology"
-      },
-      "Social Posts": {
-        Base: "Want to showcase completed cases regularly",
-        Standard: "Ready to engage the dental community daily",
-        Premium: "Need to be highly visible on social media"
-      }
-    },
-    // Small Business descriptions
-    "Small Business": {
-      "Meta Ads": {
-        Base: "Want to test if social media can bring customers",
-        Standard: "Ready to scale what's working & reach more people",
-        Premium: "Need to maximize every opportunity for growth"
-      },
-      "Google Ads": {
-        Base: "Want your first consistent source of new leads",
-        Standard: "Ready to expand services & capture more searches",
-        Premium: "Need to improve visibility online"
-      },
-      "TikTok Ads": {
-        Base: "Want to see if viral content can grow your business",
-        Standard: "Ready to build a community around your brand",
-        Premium: "Need to scale viral success into real revenue"
-      },
-      "SEO": {
-        Base: "Want customers to find you instead of competitors",
-        Standard: "Ready to rank for multiple services & locations",
-        Premium: "Need to be highly visible online"
-      },
-      "GBP Ranker": {
-        Base: "Want better reviews & local search visibility",
-        Standard: "Ready to be the obvious choice in your area",
-        Premium: "Need to improve local search visibility across regions"
-      },
-      "Backlinks": {
-        Base: "Want Google to see you as a legitimate business",
-        Standard: "Ready to build authority in your industry",
-        Premium: "Need strong online credibility"
-      },
-      "Content": {
-        Base: "Want to start attracting customers with helpful content",
-        Standard: "Ready to be seen as an industry expert",
-        Premium: "Need to be the leading voice in your field"
-      },
-      "Social Posts": {
-        Base: "Want to build initial social media presence",
-        Standard: "Ready for consistent engagement & growth",
-        Premium: "Need social media to drive significant revenue"
-      }
-    },
-    // Fitness descriptions
-    "Fitness": {
-      "Meta Ads": {
-        Base: "Want to fill classes & attract new members locally",
-        Standard: "Ready to promote specialty programs & trainers",
-        Premium: "Need to scale membership across locations"
-      },
-      "Google Ads": {
-        Base: "Want people searching 'gym near me' to find you",
-        Standard: "Ready to promote personal training & programs",
-        Premium: "Need to improve visibility for fitness-related searches"
-      },
-      "TikTok Ads": {
-        Base: "Want to showcase your gym culture & energy",
-        Standard: "Ready to build a fitness community online",
-        Premium: "Need viral transformation content at scale"
-      },
-      "SEO": {
-        Base: "Want to rank when people search for local gyms",
-        Standard: "Ready to rank for specific programs & classes",
-        Premium: "Need to improve visibility for fitness searches in your market"
-      },
-      "GBP Ranker": {
-        Base: "Want better visibility in local gym searches",
-        Standard: "Ready to showcase all your classes & amenities",
-        Premium: "Need to improve local fitness search results"
-      },
-      "Backlinks": {
-        Base: "Want search engines to trust your fitness brand",
-        Standard: "Ready to build authority in the fitness space",
-        Premium: "Need strong online fitness authority"
-      },
-      "Content": {
-        Base: "Want to share workout tips & gym updates",
-        Standard: "Ready to be the local fitness knowledge source",
-        Premium: "Need to be the ultimate fitness resource"
-      },
-      "Social Posts": {
-        Base: "Want to showcase member success stories",
-        Standard: "Ready for daily motivation & class highlights",
-        Premium: "Need non-stop engaging fitness content"
-      }
-    },
-    // Generic "Something Else" descriptions
-    "Something Else": {
-      "Meta Ads": {
-        Base: "Get started with targeted social media advertising",
-        Standard: "Scale successful campaigns & reach your ideal audience",
-        Premium: "Maximize reach & improve market visibility through social"
-      },
-      "Google Ads": {
-        Base: "Start capturing customers actively searching for your offerings",
-        Standard: "Expand visibility across search networks & capture more demand",
-        Premium: "Improve visibility in search results for relevant traffic"
-      },
-      "TikTok Ads": {
-        Base: "Test viral marketing & reach new audiences",
-        Standard: "Build engaged community & consistent content strategy",
-        Premium: "Lead your industry with viral content at scale"
-      },
-      "SEO": {
-        Base: "Improve visibility in organic search results",
-        Standard: "Rank for competitive keywords & multiple service areas",
-        Premium: "Achieve improved visibility in your industry"
-      },
-      "GBP Ranker": {
-        Base: "Enhance local visibility & gather more reviews",
-        Standard: "Become the preferred choice in local searches",
-        Premium: "Improve local search visibility across all service areas"
-      },
-      "Backlinks": {
-        Base: "Build initial domain authority & credibility",
-        Standard: "Establish strong industry presence & trust",
-        Premium: "Achieve enhanced authority in your market"
-      },
-      "Content": {
-        Base: "Start attracting customers with valuable content",
-        Standard: "Position yourself as an industry thought leader",
-        Premium: "Become the definitive resource in your field"
-      },
-      "Social Posts": {
-        Base: "Establish consistent social media presence",
-        Standard: "Drive engagement & build loyal following",
-        Premium: "Transform social media into a revenue engine"
-      }
-    }
-  };
-
-  // Generic best for (fallback)
-  const genericBestFor = {
-    "Meta Ads": {
-      Base: "Want to test if social ads can grow your business",
-      Standard: "Ready to scale successful campaigns & reach more customers",
-      Premium: "Need maximum reach & sophisticated targeting"
-    },
-    "Google Ads": {
-      Base: "Want your first reliable source of online leads",
-      Standard: "Ready to expand reach & capture more searches",
-      Premium: "Need to improve visibility in search results"
-    },
-    "TikTok Ads": {
-      Base: "Want to explore viral marketing potential",
-      Standard: "Ready to build an engaged community",
-      Premium: "Need to scale viral content into revenue"
-    },
-    "SEO": {
-      Base: "Want to be found online by potential customers",
-      Standard: "Ready to outrank your competition",
-      Premium: "Need to improve visibility in relevant searches"
-    },
-    "GBP Ranker": {
-      Base: "Want better local search visibility",
-      Standard: "Ready to become the top local choice",
-      Premium: "Need to improve local search results"
-    },
-    "Backlinks": {
-      Base: "Want Google to trust your website more",
-      Standard: "Ready to build serious online authority",
-      Premium: "Need strong search visibility"
-    },
-    "Content": {
-      Base: "Want to start attracting customers with content",
-      Standard: "Ready to establish thought leadership",
-      Premium: "Need to be the industry's go-to resource"
-    },
-    "Social Posts": {
-      Base: "Want to build initial social presence",
-      Standard: "Ready for consistent social engagement",
-      Premium: "Need social media as a revenue driver"
-    }
-  };
-
-  // Detailed tier features
-  const detailedFeatures = {
-    "Google Ads": {
-      Base: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
-        budget: "Recommended Media Budget: $0–$2,500 monthly paid directly to Google",
-        features: [
-          "• Strategic search and display campaign development",
-          "• Professional keyword research and selection",
-          "• Google Ads pixel implementation",
-          "• Custom ad creation with extensions",
-          "• Weekly performance analysis and reporting"
-        ]
-      },
-      Standard: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
-        budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to Google",
-        features: [
-          "• Includes all Base tier services",
-          "• Advanced keyword expansion strategies",
-          "• Comprehensive A/B testing protocols",
-          "• Sophisticated remarketing campaigns",
-          "• Bi-weekly optimization consultations"
-        ]
-      },
-      Premium: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Google.",
-        budget: "Recommended Media Budget: $5,000+ monthly paid directly to Google",
-        features: [
-          "• Includes all Standard tier services",
-          "• Performance Max campaign deployment",
-          "• Dedicated account strategist",
-          "• Full-funnel conversion optimization",
-          "• Weekly executive strategy sessions"
-        ]
-      }
-    },
-    "Meta Ads": {
-      Base: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
-        budget: "Recommended Media Budget: $0–$2,500 monthly paid directly to Meta",
-        features: [
-          "• Comprehensive campaign strategy development",
-          "• Three custom-designed ad creatives",
-          "• Facebook pixel installation and configuration",
-          "• Precision audience targeting",
-          "• Weekly performance monitoring"
-        ]
-      },
-      Standard: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
-        budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to Meta",
-        features: [
-          "• Includes all Base tier services",
-          "• Six professional ad creatives",
-          "• Advanced retargeting implementation",
-          "• Lookalike audience development",
-          "• Bi-weekly performance optimization"
-        ]
-      },
-      Premium: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by Meta.",
-        budget: "Recommended Media Budget: $5,000+ monthly paid directly to Meta",
-        features: [
-          "• Includes all Standard tier services",
-          "• Nine or more premium ad creatives",
-          "• Comprehensive full-funnel campaigns",
-          "• Advanced conversion tracking systems",
-          "• Weekly strategic advisory sessions"
-        ]
-      }
-    },
-    "TikTok Ads": {
-      Base: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
-        budget: "Recommended Media Budget: $500–$2,500 monthly paid directly to TikTok",
-        features: [
-          "• Strategic campaign architecture",
-          "• TikTok pixel integration",
-          "• Audience segmentation and targeting",
-          "• Professional ad copywriting",
-          "• Monthly budget allocation guidance"
-        ]
-      },
-      Standard: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
-        budget: "Recommended Media Budget: $2,500–$5,000 monthly paid directly to TikTok",
-        features: [
-          "• Includes all Base tier services",
-          "• Creative testing methodology",
-          "• Custom audience development",
-          "• Performance optimization protocols",
-          "• Bi-weekly analytics reporting"
-        ]
-      },
-      Premium: {
-        disclaimer: "Management Service Notice: This plan includes expert campaign management by Buzzword Strategies. Media spend is billed separately by TikTok.",
-        budget: "Recommended Media Budget: $5,000+ monthly paid directly to TikTok",
-        features: [
-          "• Includes all Standard tier services",
-          "• User-generated content coordination",
-          "• Advanced targeting strategies",
-          "• Comprehensive analytics dashboard",
-          "• Weekly optimization consultations"
-        ]
-      }
-    },
-    "SEO": {
-      Base: {
-        features: [
-          "• 10 strategically selected keywords",
-          "• Google Analytics configuration",
-          "• XML sitemap development",
-          "• Foundational on-page optimization",
-          "• Monthly ranking reports"
-        ]
-      },
-      Standard: {
-        features: [
-          "• Includes all Base tier services",
-          "• 20 targeted keywords",
-          "• Technical SEO audit",
-          "• Content optimization strategy",
-          "• Competitive analysis"
-        ]
-      },
-      Premium: {
-        features: [
-          "• Includes all Standard tier services",
-          "• 40 high-value keywords",
-          "• Advanced link building strategy",
-          "• Local SEO optimization",
-          "• Quarterly strategic reviews"
-        ]
-      }
-    },
-    "GBP Ranker": {
-      Base: {
-        features: [
-          "• One optimized image weekly",
-          "• Monthly Q&A content",
-          "• AI-powered review responses",
-          "• Profile optimization",
-          "• Basic ranking analytics"
-        ]
-      },
-      Standard: {
-        features: [
-          "• Includes all Base tier services",
-          "• Three optimized images weekly",
-          "• Bi-weekly Q&A content",
-          "• Enhanced AI response system",
-          "• Category optimization"
-        ]
-      },
-      Premium: {
-        features: [
-          "• Includes all Standard tier services",
-          "• Daily image optimization",
-          "• Weekly Q&A content",
-          "• Human-verified responses",
-          "• Multi-location management"
-        ]
-      }
-    },
-    "Backlinks": {
-      Base: {
-        features: [
-          "• 10 high-quality backlinks monthly",
-          "• DA 10+ domain selection",
-          "• Diverse link portfolio",
-          "• Natural anchor text distribution",
-          "• Monthly link acquisition report"
-        ]
-      },
-      Standard: {
-        features: [
-          "• Includes all Base tier services",
-          "• 15 premium backlinks monthly",
-          "• DA 30+ domain selection",
-          "• 500-word guest articles",
-          "• Competitor link analysis"
-        ]
-      },
-      Premium: {
-        features: [
-          "• Includes all Standard tier services",
-          "• 20 authority backlinks monthly",
-          "• DA 50+ domain selection",
-          "• 1,000-word guest articles",
-          "• Strategic link planning"
-        ]
-      }
-    },
-    "Content": {
-      Base: {
-        features: [
-          "• One professional article monthly",
-          "• 500-word composition",
-          "• SEO optimization",
-          "• Human editorial review",
-          "• Blog publication service"
-        ]
-      },
-      Standard: {
-        features: [
-          "• Includes all Base tier services",
-          "• Two articles monthly",
-          "• 1,000 words per article",
-          "• Keyword research integration",
-          "• Internal linking strategy"
-        ]
-      },
-      Premium: {
-        features: [
-          "• Includes all Standard tier services",
-          "• Four articles monthly",
-          "• 2,000 words per article",
-          "• Topic clustering strategy",
-          "• Content calendar development"
-        ]
-      }
-    },
-    "Social Posts": {
-      Base: {
-        features: [
-          "• Four posts monthly",
-          "• Single platform focus",
-          "• Licensed imagery",
-          "• Strategic scheduling",
-          "• Monthly analytics report"
-        ]
-      },
-      Standard: {
-        features: [
-          "• Includes all Base tier services",
-          "• 16 posts monthly",
-          "• Three platform distribution",
-          "• Custom graphics design",
-          "• Engagement monitoring"
-        ]
-      },
-      Premium: {
-        features: [
-          "• Includes all Standard tier services",
-          "• 28 posts monthly",
-          "• Six platform coverage",
-          "• Video content creation",
-          "• Community management"
-        ]
-      }
-    }
-  };
 
   // State variables
   const [selectedTiers, setSelectedTiers] = useState({});
@@ -613,23 +631,8 @@ const BundleBuilder = () => {
   // Bundle ID state
   const [bundleID, setBundleID] = useState('');
 
-  // Calculate discounts
-  const getSubscriptionDiscount = (months) => {
-    const discounts = {
-      3: 0, 6: 2, 9: 3.5, 12: 5, 15: 6.5, 18: 8, 21: 9, 24: 10
-    };
-    return discounts[months] || 0;
-  };
-
-  const getBundleDiscount = (num) => {
-    const discounts = {
-      0: 0, 1: 0, 2: 1, 3: 2.5, 4: 4, 5: 5.5, 6: 7, 7: 8.5, 8: 10
-    };
-    return discounts[num] || 10;
-  };
-
-  // Calculate total pricing
-  const calculateFinalPrice = () => {
+  // Memoize calculation of final price to avoid recalculation on every render
+  const calculateFinalPrice = useCallback(() => {
     const selected = Object.entries(selectedTiers).filter(([_, tier]) => tier);
     const productCount = selected.length;
     let total = selected.reduce((sum, [service, tier]) => sum + pricing[service][tier], 0);
@@ -643,8 +646,9 @@ const BundleBuilder = () => {
     const totalSaved = total - final;
 
     return { final, totalSaved, selected, bundleDiscount, productCount };
-  };
+  }, [selectedTiers, subLength]);
 
+  // Destructure calculated values outside JSX for better performance
   const { final, totalSaved, selected, bundleDiscount, productCount } = calculateFinalPrice();
   
   // Discount calculations - both should be 0 if no products selected
@@ -653,15 +657,15 @@ const BundleBuilder = () => {
   const maxDiscount = 20;
 
   // Get best for text based on selected business type
-  const getBestForText = (service, tier) => {
+  const getBestForText = useCallback((service, tier) => {
     if (selectedBusiness && bestForIndustry[selectedBusiness]) {
       return bestForIndustry[selectedBusiness][service][tier];
     }
     return genericBestFor[service][tier];
-  };
+  }, [selectedBusiness]);
 
-  // Function to save bundle data to Supabase
-  const saveToSupabase = async (step) => {
+  // Function to save bundle data to Supabase with error handling
+  const saveToSupabase = useCallback(async (step) => {
     try {
       // Get current bundle data
       const currentBundleID = bundleID || `bwb-${uuidv4()}`;
@@ -684,11 +688,6 @@ const BundleBuilder = () => {
         agreementInfo: step >= 2 ? agreementInfo : null
       };
 
-      // If no bundleID exists yet, set it
-      if (!bundleID) {
-        setBundleID(currentBundleID);
-      }
-
       // Save to either our Express server (if deployed) or use Netlify function
       try {
         // Try Express endpoint first
@@ -706,119 +705,138 @@ const BundleBuilder = () => {
       console.error('Error saving bundle data:', error);
       return bundleID || null; // Return existing bundleID if there's an error
     }
-  };
+  }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, userInfo, agreementInfo]);
 
-  // Handle tier selection - Updated with data saving
-  const handleTierSelect = async (service, tier) => {
+  // Handle tier selection with improved error handling
+  const handleTierSelect = useCallback(async (service, tier) => {
     setSelectedTiers(prev => ({
       ...prev,
       [service]: prev[service] === tier ? null : tier
     }));
     
     // Save data when tiers are selected (after a short delay to let state update)
-    setTimeout(async () => {
-      if (bundleID) {
-        await saveToSupabase(0);
+    if (bundleID) {
+      try {
+        // Use setTimeout to ensure state has updated
+        const timeoutId = setTimeout(async () => {
+          await saveToSupabase(0);
+        }, 500);
+        
+        // Cleanup timeout if component unmounts
+        return () => clearTimeout(timeoutId);
+      } catch (error) {
+        console.error('Error saving tier selection:', error);
       }
-    }, 500);
-  };
+    }
+  }, [bundleID, saveToSupabase]);
 
   // Open modal for tier details
-  const openTierDetailsModal = (service, tier) => {
+  const openTierDetailsModal = useCallback((service, tier) => {
     setModalService(service);
     setModalTier(tier);
     setShowModal(true);
-  };
+  }, []);
   
   // Open service info modal
-  const openServiceInfoModal = (service) => {
+  const openServiceInfoModal = useCallback((service) => {
     setServiceInfoContent({
       title: service,
       description: serviceDescriptions[service],
       successStory: serviceSuccessStories[service]
     });
     setShowServiceInfoModal(true);
-  };
+  }, []);
 
-  // Form submission handlers - Updated with data saving
-  const handleBundleConfirm = async () => {
+  // Form submission handlers with improved error handling
+  const handleBundleConfirm = useCallback(async () => {
     if (!subscriptionAcknowledged) {
       alert("Please acknowledge the subscription terms by checking the box.");
       return;
     }
     
     setBundleRejected(false); // Reset if previously rejected
-    // Save bundle data at step 0 (bundle confirmation)
-    await saveToSupabase(0);
-    setFormStep(1);
-  };
+    
+    try {
+      // Save bundle data at step 0 (bundle confirmation)
+      await saveToSupabase(0);
+      setFormStep(1);
+    } catch (error) {
+      console.error('Error confirming bundle:', error);
+      alert('There was an error saving your bundle. Please try again.');
+    }
+  }, [subscriptionAcknowledged, saveToSupabase]);
 
-  const handleBundleReject = () => {
+  const handleBundleReject = useCallback(() => {
     setBundleRejected(true);
     setShowPurchaseModal(false);
     // You could log this rejection to Supabase here
-  };
+  }, []);
 
-  const handleUserInfoSubmit = async (formData) => {
-    setUserInfo(formData);
-    // Save bundle data at step 1 (user info)
-    await saveToSupabase(1);
-    setFormStep(2); // Move to contract agreement
-  };
-
- const handleAgreementSubmit = async (agreementData) => {
-  setAgreementInfo(agreementData);
-  setIsLoading(true);
-  
-  try {
-    // Save bundle data at step 2 (agreement)
-    const finalBundleID = await saveToSupabase(2);
-    
-    // Format the selected services string
-    const selectedServicesStr = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
-    // Create a full payload with all needed data including PDF
-    const payload = {
-      bundleID: finalBundleID,
-      bundleName: bundleName || 'My Bundle',
-      subLength,
-      finalMonthly: final.toFixed(2),
-      selectedServices: selectedServicesStr,
-      selectedTiers,
-      userInfo,
-      agreementInfo: agreementData // This now includes the PDF
-    };
-    
-    // Save agreement data with PDF to Supabase
-    const response = await axios.post('/.netlify/functions/save-agreement', payload);
-    
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to save agreement');
+  const handleUserInfoSubmit = useCallback(async (formData) => {
+    try {
+      setUserInfo(formData);
+      // Save bundle data at step 1 (user info)
+      await saveToSupabase(1);
+      setFormStep(2); // Move to contract agreement
+    } catch (error) {
+      console.error('Error submitting user info:', error);
+      alert('There was an error saving your information. Please try again.');
     }
+  }, [saveToSupabase]);
+
+  const handleAgreementSubmit = useCallback(async (agreementData) => {
+    setAgreementInfo(agreementData);
+    setIsLoading(true);
     
-    // Directly create query params for Stripe checkout
-    const queryParams = new URLSearchParams({
-      bundleID: payload.bundleID,
-      bundleName: payload.bundleName,
-      finalMonthly: payload.finalMonthly,
-      subLength: payload.subLength,
-      selectedServices: selectedServicesStr
-    }).toString();
-    
-    // Direct redirect to Stripe checkout
-    window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-  } catch (error) {
-    console.error('Error:', error);
-    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-    setIsLoading(false);
-  }
-};
+    try {
+      // Save bundle data at step 2 (agreement)
+      const finalBundleID = await saveToSupabase(2);
+      
+      // Format the selected services string
+      const selectedServicesStr = Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => `${product}: ${tier}`)
+        .join(', ');
+      
+      // Create a full payload with all needed data including PDF
+      const payload = {
+        bundleID: finalBundleID,
+        bundleName: bundleName || 'My Bundle',
+        subLength,
+        finalMonthly: final.toFixed(2),
+        selectedServices: selectedServicesStr,
+        selectedTiers,
+        userInfo,
+        agreementInfo: agreementData // This now includes the PDF
+      };
+      
+      // Save agreement data with PDF to Supabase
+      const response = await axios.post('/.netlify/functions/save-agreement', payload);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to save agreement');
+      }
+      
+      // Directly create query params for Stripe checkout
+      const queryParams = new URLSearchParams({
+        bundleID: payload.bundleID,
+        bundleName: payload.bundleName,
+        finalMonthly: payload.finalMonthly,
+        subLength: payload.subLength,
+        selectedServices: selectedServicesStr
+      }).toString();
+      
+      // Direct redirect to Stripe checkout
+      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+      setIsLoading(false);
+    }
+  }, [bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
 
   // Handle product selection with auto-scroll
-  const handleProductSelect = (product) => {
+  const handleProductSelect = useCallback((product) => {
     setCurrentlyOpenService(product);
     setCurrentStep(3); // Move to step 3: Tier selection
     
@@ -826,9 +844,59 @@ const BundleBuilder = () => {
     setTimeout(() => {
       tiersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 300);
-  };
+  }, []);
 
-  // Component for Performance Disclaimer Modal
+  // Load saved bundle on mount with improved error handling
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("buzzwordBundle");
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        setSelectedTiers(parsedData.selectedTiers || {});
+        setSubLength(parsedData.subLength || 3);
+        setBundleName(parsedData.bundleName || "");
+        setSelectedBusiness(parsedData.selectedBusiness || "");
+        
+        // Load bundleID if available
+        if (parsedData.bundleID) {
+          setBundleID(parsedData.bundleID);
+        }
+        
+        const firstService = Object.keys(parsedData.selectedTiers || {}).find(service => products.includes(service)) || products[0];
+        setCurrentlyOpenService(firstService);
+        
+        // Set current step based on saved data
+        if (parsedData.selectedBusiness) {
+          setCurrentStep(2);
+          if (Object.keys(parsedData.selectedTiers || {}).length > 0) {
+            setCurrentStep(3);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading saved bundle:", e);
+      // Continue without the saved data if there's an error
+    }
+  }, []);
+
+  // Save bundle data with improved error handling
+  useEffect(() => {
+    try {
+      const bundleData = {
+        bundleID,
+        selectedTiers,
+        subLength,
+        bundleName,
+        selectedBusiness,
+        finalMonthly: parseFloat(final.toFixed(2))
+      };
+      localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
+    } catch (error) {
+      console.error("Error saving bundle to localStorage:", error);
+    }
+  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final]);
+
+  // Component for Performance Disclaimer Modal - extracted to improve readability
   const PerformanceDisclaimerModal = () => {
     if (!showPerformanceDisclaimer) return null;
     
@@ -888,7 +956,7 @@ const BundleBuilder = () => {
     );
   };
   
-  // Privacy Policy Modal
+  // Privacy Policy Modal - extracted for better readability
   const PrivacyPolicyModal = () => {
     if (!showPrivacyPolicy) return null;
     
@@ -1013,7 +1081,7 @@ const BundleBuilder = () => {
     );
   };
   
-  // Subscription Terms Disclosure Component
+  // Subscription Terms Disclosure Component - extracted for better readability
   const SubscriptionDisclosure = () => {
     return (
       <div className="p-4 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg mb-4 text-sm">
@@ -1047,51 +1115,6 @@ const BundleBuilder = () => {
       </div>
     );
   };
-
-  // Load saved bundle on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("buzzwordBundle");
-    if (saved) {
-      try {
-        const parsedData = JSON.parse(saved);
-        setSelectedTiers(parsedData.selectedTiers || {});
-        setSubLength(parsedData.subLength || 3);
-        setBundleName(parsedData.bundleName || "");
-        setSelectedBusiness(parsedData.selectedBusiness || "");
-        
-        // Load bundleID if available
-        if (parsedData.bundleID) {
-          setBundleID(parsedData.bundleID);
-        }
-        
-        const firstService = Object.keys(parsedData.selectedTiers).find(service => products.includes(service)) || products[0];
-        setCurrentlyOpenService(firstService);
-        
-        // Set current step based on saved data
-        if (parsedData.selectedBusiness) {
-          setCurrentStep(2);
-          if (Object.keys(parsedData.selectedTiers || {}).length > 0) {
-            setCurrentStep(3);
-          }
-        }
-      } catch (e) {
-        console.error("Error loading saved bundle:", e);
-      }
-    }
-  }, []);
-
-  // Save bundle data
-  useEffect(() => {
-    const bundleData = {
-      bundleID,
-      selectedTiers,
-      subLength,
-      bundleName,
-      selectedBusiness,
-      finalMonthly: parseFloat(final.toFixed(2))
-    };
-    localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
-  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final]);
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white">
@@ -1133,50 +1156,52 @@ const BundleBuilder = () => {
               </div>
             </div>
             
-        {/* Business Selector */}
-<div className="flex flex-col items-center gap-3 w-full">
-  <span className="text-sm text-[#D28C00]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
-  <div className="flex flex-wrap gap-3 justify-center px-2">
-    {businessTypes.map(type => (
-      <button
-        key={type}
-        onClick={() => {
-          // Inline implementation instead of using handleIndustrySelect
-          setSelectedBusiness(type);
-          setCurrentStep(2); // Move to step 2 after selection
-          
-          // Save data after update if bundleID exists
-          if (bundleID) {
-            setTimeout(() => saveToSupabase(0), 500);
-          }
-          
-          // Scroll to products section after a short delay
-          setTimeout(() => {
-            productsSectionRef.current?.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start' 
-            });
-          }, 300);
-        }}
-        className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
-          selectedBusiness === type
-            ? 'bg-[#D28C00] text-[#1A1A1A] font-medium shadow-lg shadow-[#D28C00]/20'
-            : 'bg-[#2A2A2A] text-white hover:bg-[#2A2A2A]/80 border border-gray-700'
-        }`}
-      >
-        {type}
-      </button>
-    ))}
-  </div>
-  {selectedBusiness && (
-    <div className="flex items-center mt-2 animate-pulse">
-      <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-      </svg>
-      <span className="text-sm text-white">Scroll down to select your services</span>
-    </div>
-  )}
-</div>
+            {/* Business Selector */}
+            <div className="flex flex-col items-center gap-3 w-full">
+              <span className="text-sm text-[#D28C00]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
+              <div className="flex flex-wrap gap-3 justify-center px-2">
+                {businessTypes.map(type => (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setSelectedBusiness(type);
+                      setCurrentStep(2); // Move to step 2 after selection
+                      
+                      // Save data after update if bundleID exists
+                      if (bundleID) {
+                        setTimeout(() => saveToSupabase(0), 500);
+                      }
+                      
+                      // Scroll to products section after a short delay
+                      setTimeout(() => {
+                        productsSectionRef.current?.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'start' 
+                        });
+                      }, 300);
+                    }}
+                    className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
+                      selectedBusiness === type
+                        ? 'bg-[#D28C00] text-[#1A1A1A] font-medium shadow-lg shadow-[#D28C00]/20'
+                        : 'bg-[#2A2A2A] text-white hover:bg-[#2A2A2A]/80 border border-gray-700'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+              {selectedBusiness && (
+                <div className="flex items-center mt-2 animate-pulse">
+                  <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span className="text-sm text-white">Scroll down to select your services</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-[#D28C00]/10">
