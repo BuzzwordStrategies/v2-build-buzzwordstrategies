@@ -766,71 +766,56 @@ const BundleBuilder = () => {
     setFormStep(2); // Move to contract agreement
   };
 
-  const handleAgreementSubmit = async (agreementData) => {
-    setAgreementInfo(agreementData);
-    setIsLoading(true);
+ const handleAgreementSubmit = async (agreementData) => {
+  setAgreementInfo(agreementData);
+  setIsLoading(true);
+  
+  try {
+    // Save bundle data at step 2 (agreement)
+    const finalBundleID = await saveToSupabase(2);
     
-    try {
-      // Save bundle data at step 2 (agreement)
-      const finalBundleID = await saveToSupabase(2);
-      
-      // Create payload for saving agreement including PDF
-      const payload = {
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        subLength,
-        finalMonthly: final.toFixed(2),
-        selectedServices: Object.entries(selectedTiers)
-          .filter(([, tier]) => tier)
-          .map(([product, tier]) => `${product}: ${tier}`)
-          .join(', '),
-        selectedTiers,
-        userInfo,
-        agreementInfo: agreementData,
-      };
-      
-      // Save agreement data with PDF to Supabase
-      await axios.post('/.netlify/functions/save-agreement', payload);
-      
-      // Format the selected services string
-      const selectedServicesStr = Object.entries(selectedTiers)
-        .filter(([, tier]) => tier)
-        .map(([product, tier]) => `${product}: ${tier}`)
-        .join(', ');
-      
-      // Directly create query params for Stripe checkout
-      const queryParams = new URLSearchParams({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        finalMonthly: final.toFixed(2),
-        subLength,
-        selectedServices: selectedServicesStr
-      }).toString();
-      
-      // Direct redirect to Stripe checkout
-      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-    } catch (error) {
-      console.error('Error:', error);
-      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-      setIsLoading(false);
-    }
-  };
-
-  // Handle industry selection with auto-scroll - Updated with data saving
-  const handleIndustrySelect = async (industry) => {
-    setSelectedBusiness(industry);
-    setCurrentStep(2); // Move to step 2: Services selection
+    // Format the selected services string
+    const selectedServicesStr = Object.entries(selectedTiers)
+      .filter(([, tier]) => tier)
+      .map(([product, tier]) => `${product}: ${tier}`)
+      .join(', ');
     
-    // Save data when industry is selected
-    if (bundleID) {
-      await saveToSupabase(0);
+    // Create a full payload with all needed data including PDF
+    const payload = {
+      bundleID: finalBundleID,
+      bundleName: bundleName || 'My Bundle',
+      subLength,
+      finalMonthly: final.toFixed(2),
+      selectedServices: selectedServicesStr,
+      selectedTiers,
+      userInfo,
+      agreementInfo: agreementData // This now includes the PDF
+    };
+    
+    // Save agreement data with PDF to Supabase
+    const response = await axios.post('/.netlify/functions/save-agreement', payload);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to save agreement');
     }
     
-    // Scroll to products section after a short delay
-    setTimeout(() => {
-      productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-  };
+    // Directly create query params for Stripe checkout
+    const queryParams = new URLSearchParams({
+      bundleID: payload.bundleID,
+      bundleName: payload.bundleName,
+      finalMonthly: payload.finalMonthly,
+      subLength: payload.subLength,
+      selectedServices: selectedServicesStr
+    }).toString();
+    
+    // Direct redirect to Stripe checkout
+    window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+  } catch (error) {
+    console.error('Error:', error);
+    alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+    setIsLoading(false);
+  }
+};
 
   // Handle product selection with auto-scroll
   const handleProductSelect = (product) => {
