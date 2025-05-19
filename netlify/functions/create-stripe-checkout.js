@@ -82,6 +82,7 @@ exports.handler = async (event) => {
         },
       ],
       mode: 'subscription',
+      allow_promotion_codes: true, // Add this line to enable promo codes
       success_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${finalBundleID}`,
       cancel_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/cancel`,
       metadata: {
