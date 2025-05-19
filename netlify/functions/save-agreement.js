@@ -125,6 +125,8 @@ async function saveToSupabase(data) {
       status: data.status,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
+      orderData.agreement_pdf = data.agreementInfo.agreementPdf; // Base64 encoded PDF
+orderData.agreement_filename = `agreement_${data.bundleID}_${new Date().toISOString().split('T')[0]}.pdf`;
     };
     
     console.log('Sending data to Supabase:', JSON.stringify(orderData, null, 2));
