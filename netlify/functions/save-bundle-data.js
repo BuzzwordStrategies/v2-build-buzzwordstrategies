@@ -32,7 +32,6 @@ exports.handler = async (event) => {
     
     // Format the data for Supabase
     const bundleData = {
-      bundle_id: finalBundleID,
       bundle_name: bundleName || "My Bundle",
       selected_tiers: JSON.stringify(selectedTiers || {}),
       sub_length: parseInt(subLength) || 3,
@@ -52,7 +51,7 @@ exports.handler = async (event) => {
       bundleData.customer_state = userInfo.clientState;
       bundleData.customer_zip = userInfo.clientZip;
       bundleData.customer_company = userInfo.clientCompany || '';
-      bundleData.customer_website = userInfo.clientWebsite || ''; // Added website field
+      bundleData.customer_website = userInfo.clientWebsite || '';
       bundleData.marketing_consent = userInfo.marketingConsent || false;
     }
     
@@ -71,53 +70,28 @@ exports.handler = async (event) => {
       };
     }
     
-    // Check if bundle already exists
-    const checkResponse = await axios.get(
-      `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
+    // For new records, add status and created_at
+    if (!bundleID) {
+      bundleData.status = 'in_progress';
+      bundleData.created_at = new Date().toISOString();
+    }
+    
+    // *** USE THE SAFE UPDATE FUNCTION INSTEAD OF DIRECT PATCH/POST ***
+    console.log('Using safe_update_bundle RPC function');
+    const response = await axios.post(
+      `${SUPABASE_URL}/rest/v1/rpc/safe_update_bundle`,
+      {
+        p_bundle_id: finalBundleID,
+        p_data: bundleData
+      },
       {
         headers: {
           'apikey': SUPABASE_SERVICE_KEY,
-          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
+          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+          'Content-Type': 'application/json'
         }
       }
     );
-    
-    let response;
-    
-    if (checkResponse.data && checkResponse.data.length > 0) {
-      // Update existing record
-      console.log('Updating existing record');
-      response = await axios.patch(
-        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
-        bundleData,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
-        }
-      );
-    } else {
-      // Create new record
-      console.log('Creating new record');
-      bundleData.created_at = new Date().toISOString();
-      bundleData.status = 'in_progress';
-      
-      response = await axios.post(
-        `${SUPABASE_URL}/rest/v1/pending_orders`,
-        bundleData,
-        {
-          headers: {
-            'apikey': SUPABASE_SERVICE_KEY,
-            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
-        }
-      );
-    }
     
     console.log('Supabase API response status:', response.status);
 
