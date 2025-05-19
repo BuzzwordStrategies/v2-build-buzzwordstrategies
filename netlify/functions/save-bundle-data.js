@@ -25,7 +25,7 @@ exports.handler = async (event) => {
     } = data;
     
     // Ensure we have a bundleID, generate if not provided
-    const finalBundleID = `bwb-${Date.now()}-${uuidv4().slice(0,8)}`;
+    const finalBundleID = bundleID || `bwb-${Date.now()}-${uuidv4().slice(0,8)}`;
 
     // Format the data for Supabase
     const bundleData = {
