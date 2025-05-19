@@ -105,7 +105,7 @@ exports.handler = async (event) => {
       
       // Check if bundle already exists
       const checkResponse = await axios.get(
-        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
+  `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${finalBundleID}`,
         {
           headers: {
             'apikey': SUPABASE_SERVICE_KEY,
