@@ -10,8 +10,16 @@ exports.handler = async (event) => {
   console.log('Starting save-agreement handler');
   
   try {
+    // Parse and validate the incoming data
     const data = JSON.parse(event.body);
     console.log('Received data:', JSON.stringify(data, null, 2));
+    
+    if (!data.bundleID) {
+      return { 
+        statusCode: 400, 
+        body: JSON.stringify({ error: 'Missing required parameter: bundleID' }) 
+      };
+    }
     
     const { 
       bundleID, 
@@ -35,7 +43,7 @@ exports.handler = async (event) => {
       subLength,
       finalMonthly,
       selectedServices,
-      selectedTiers: JSON.stringify(selectedTiers || {}),
+      selectedTiers: selectedTiers ? JSON.stringify(selectedTiers) : '{}',
       clientName: userInfo?.clientName,
       clientEmail: userInfo?.clientEmail,
       clientPhone: userInfo?.clientPhone,
@@ -49,6 +57,9 @@ exports.handler = async (event) => {
       agreementAccepted: agreementInfo?.agreeToTerms,
       agreementSignature: agreementInfo?.signatureName,
       agreementDate: agreementInfo?.agreementDate,
+      agreementPdf: agreementInfo?.agreementPdf, // Base64 encoded PDF
+      agreementFilename: agreementInfo?.agreementFilename || 
+        `agreement_${finalBundleID}_${new Date().toISOString().split('T')[0]}.pdf`,
       status: 'agreement_signed'
     });
     
@@ -59,8 +70,8 @@ exports.handler = async (event) => {
     const queryParams = new URLSearchParams({
       bundleID: finalBundleID,
       bundleName: bundleName || "My Bundle",
-      finalMonthly: finalMonthly,
-      subLength: subLength,
+      finalMonthly: finalMonthly || "0",
+      subLength: subLength || "1",
       selectedServices: selectedServices || "No services selected"
     }).toString();
     
@@ -107,29 +118,34 @@ async function saveToSupabase(data) {
     // Format the data for Supabase
     const orderData = {
       bundle_id: data.bundleID,
-      bundle_name: data.bundleName,
-      sub_length: parseInt(data.subLength),
-      final_monthly: parseFloat(data.finalMonthly),
-      selected_services: data.selectedServices,
-      selected_tiers: data.selectedTiers,
-      customer_email: data.clientEmail,
-      customer_name: data.clientName,
-      customer_address: data.clientAddress ? `${data.clientAddress}, ${data.clientCity}, ${data.clientState} ${data.clientZip}` : '',
-      customer_phone: data.clientPhone,
-      customer_company: data.clientCompany,
-      customer_website: data.clientWebsite,
-      marketing_consent: data.marketingConsent,
-      agreement_accepted: data.agreementAccepted,
-      agreement_signature: data.agreementSignature,
-      agreement_date: data.agreementDate,
-      status: data.status,
+      bundle_name: data.bundleName || 'My Bundle',
+      sub_length: parseInt(data.subLength) || 3,
+      final_monthly: parseFloat(data.finalMonthly) || 0,
+      selected_services: data.selectedServices || '',
+      selected_tiers: data.selectedTiers || '{}',
+      customer_email: data.clientEmail || '',
+      customer_name: data.clientName || '',
+      customer_address: data.clientAddress ? 
+        `${data.clientAddress}, ${data.clientCity || ''}, ${data.clientState || ''} ${data.clientZip || ''}`.trim() : '',
+      customer_phone: data.clientPhone || '',
+      customer_company: data.clientCompany || '',
+      customer_website: data.clientWebsite || '',
+      marketing_consent: !!data.marketingConsent,
+      agreement_accepted: !!data.agreementAccepted,
+      agreement_signature: data.agreementSignature || '',
+      agreement_date: data.agreementDate || new Date().toISOString().split('T')[0],
+      agreement_pdf: data.agreementPdf || null,
+      agreement_filename: data.agreementFilename || '',
+      status: data.status || 'in_progress',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-      orderData.agreement_pdf = data.agreementInfo.agreementPdf; // Base64 encoded PDF
-orderData.agreement_filename = `agreement_${data.bundleID}_${new Date().toISOString().split('T')[0]}.pdf`;
     };
     
-    console.log('Sending data to Supabase:', JSON.stringify(orderData, null, 2));
+    console.log('Sending data to Supabase:', JSON.stringify({
+      ...orderData,
+      agreement_pdf: orderData.agreement_pdf ? '(Base64 PDF data omitted for logging)' : null
+    }, null, 2));
+    
     console.log('Supabase URL:', SUPABASE_URL);
     
     // Check if bundle already exists
