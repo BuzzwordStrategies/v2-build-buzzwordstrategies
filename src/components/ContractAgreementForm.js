@@ -1,5 +1,6 @@
 // src/components/ContractAgreementForm.js
 import React, { useState, useEffect } from 'react';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 const ContractAgreementForm = ({ 
   onSubmit, 
@@ -25,6 +26,100 @@ const ContractAgreementForm = ({
       setErrors({});
     }
   }, [agreeToTerms, signatureName, privacyPolicyAccepted, errors]);
+  
+  // PDF Generation Function
+  const generateAgreementPDF = async () => {
+    try {
+      // Create a new PDF document
+      const pdfDoc = await PDFDocument.create();
+      const timesRoman = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      const timesRomanBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+      
+      // Add a page to the document
+      const page = pdfDoc.addPage([612, 792]); // Letter size
+      const { width, height } = page.getSize();
+      
+      // Set font size and line height
+      const fontSize = 11;
+      const headerSize = 16;
+      const lineHeight = 16;
+      let y = height - 50; // Start from top with margin
+      
+      // Helper function to add text and move cursor down
+      const addText = (text, font = timesRoman, size = fontSize) => {
+        page.drawText(text, {
+          x: 50,
+          y,
+          font,
+          size,
+          color: rgb(0, 0, 0),
+          maxWidth: width - 100,
+        });
+        y -= lineHeight;
+      };
+      
+      // Add title
+      addText('MARKETING SERVICES AGREEMENT', timesRomanBold, headerSize);
+      y -= 10; // Extra space after title
+      
+      // Add introduction
+      addText(`This Marketing Services Agreement (the "Agreement") is made and entered into as of ${currentDate},`, timesRoman, fontSize);
+      addText(`by and between Buzzword Strategies LLC ("Agency") and ${clientName} ("Client").`, timesRoman, fontSize);
+      y -= 10; // Extra space
+      
+      // Add service details
+      addText('SELECTED SERVICES:', timesRomanBold, fontSize);
+      addText(selectedServices, timesRoman, fontSize);
+      y -= 5;
+      
+      addText(`Subscription Length: ${subLength} months`, timesRoman, fontSize);
+      addText(`Monthly Fee: $${finalMonthly}`, timesRoman, fontSize);
+      y -= 10;
+      
+      // Add key sections from agreement (abbreviated)
+      addText('AGREEMENT SUMMARY:', timesRomanBold, fontSize);
+      y -= 5;
+      
+      addText('1. SERVICES', timesRomanBold, fontSize);
+      addText('Agency will provide Client with the marketing services specified in the selected bundle.', timesRoman, fontSize);
+      y -= 5;
+      
+      addText('2. TERM AND TERMINATION', timesRomanBold, fontSize);
+      addText(`This Agreement shall commence on the Effective Date for an initial ${subLength}-month period,`, timesRoman, fontSize);
+      addText('automatically renewing thereafter until canceled with 30 days notice.', timesRoman, fontSize);
+      y -= 5;
+      
+      addText('3. FEES AND PAYMENT', timesRomanBold, fontSize);
+      addText(`Client shall pay Agency $${finalMonthly} per month for the Services.`, timesRoman, fontSize);
+      y -= 5;
+      
+      addText('4. INTELLECTUAL PROPERTY', timesRomanBold, fontSize);
+      addText('Agency retains ownership of all marketing strategies, processes, and methodologies.', timesRoman, fontSize);
+      addText('Client owns all finished creative deliverables created specifically for Client.', timesRoman, fontSize);
+      y -= 5;
+      
+      // Jump to signature section
+      y = 150;
+      
+      addText('CLIENT ACCEPTANCE:', timesRomanBold, fontSize);
+      addText(`Electronic Signature: ${signatureName}`, timesRoman, fontSize);
+      addText(`Date: ${currentDate}`, timesRoman, fontSize);
+      addText(`Bundle ID: ${bundleID}`, timesRoman, fontSize);
+      
+      // Add legal footer
+      y = 50;
+      const footerSize = 8;
+      addText('This document is a summary of the agreement. The complete terms are available in the online agreement.', timesRoman, footerSize);
+      addText('Electronic signature is valid as an original signature per E-SIGN Act.', timesRoman, footerSize);
+      
+      // Serialize the PDF to bytes
+      const pdfBytes = await pdfDoc.save();
+      return Buffer.from(pdfBytes).toString('base64');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,17 +148,22 @@ const ContractAgreementForm = ({
       return;
     }
     
-    // Create agreement data
-    const agreementData = {
-      agreeToTerms,
-      signatureName: signatureName.trim(),
-      agreementDate: currentDate,
-      privacyPolicyAccepted
-    };
-    
     setIsProcessing(true);
     
     try {
+      // Generate PDF
+      const pdfBase64 = await generateAgreementPDF();
+      
+      // Create agreement data with PDF
+      const agreementData = {
+        agreeToTerms,
+        signatureName: signatureName.trim(),
+        agreementDate: currentDate,
+        privacyPolicyAccepted,
+        agreementPdf: pdfBase64, // Add the PDF data
+        agreementFilename: `agreement_${bundleID}_${new Date().toISOString().split('T')[0]}.pdf`
+      };
+      
       // Submit the agreement data to parent
       await onSubmit(agreementData);
       // The parent component (BundleBuilder) will handle the redirect
