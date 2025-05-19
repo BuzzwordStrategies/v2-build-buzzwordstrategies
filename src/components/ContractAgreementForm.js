@@ -75,108 +75,125 @@ const ContractAgreementForm = ({
       {/* Contract text in scrollable container */}
       <div className="bg-[#2A2A2A] border border-[#FFBA38]/20 rounded-lg p-4 h-[400px] overflow-y-auto mb-4 text-sm text-[#F8F6F0]/90">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-[#FFBA38]">MARKETING SERVICES AGREEMENT</h3>
+         <h3 className="text-lg font-semibold text-[#FFBA38]">MARKETING SERVICES AGREEMENT</h3>
           
-          <p>This Marketing Services Agreement (the "Agreement") is made and entered into as of {currentDate}, by and between Buzzword Strategies LLC, a Wyoming limited liability company with its principal place of business at 1603 Capitol Ave Ste 415 #465784, Cheyenne, WY 82001 ("Agency"), and {clientName}, ("Client").</p>
+<p>This Marketing Services Agreement (the "Agreement") is made and entered into as of {currentDate}, by and between Buzzword Strategies LLC, a Wyoming limited liability company with its principal place of business at 1603 Capitol Ave Ste 415 #465784, Cheyenne, WY 82001 ("Agency"), and {clientName}, ("Client").</p>
           
-          <p><strong>WHEREAS</strong>, Agency is in the business of providing marketing services;</p>
+<p><strong>WHEREAS</strong>, Agency is in the business of providing marketing services;</p>
           
-          <p><strong>WHEREAS</strong>, Client has selected a specific marketing bundle and tiers through Agency's online platform and has agreed to the terms of such bundle by pressing "accept" on a pop-up confirmation prior to executing this Agreement;</p>
+<p><strong>WHEREAS</strong>, Client has selected a specific marketing bundle and tiers through Agency's online platform and has agreed to the terms of such bundle by pressing "accept" on a pop-up confirmation prior to executing this Agreement;</p>
           
-          <p><strong>WHEREAS</strong>, Client desires to engage Agency to provide such services, and Agency desires to provide such services, subject to the terms and conditions set forth herein;</p>
+<p><strong>WHEREAS</strong>, Client desires to engage Agency to provide such services, and Agency desires to provide such services, subject to the terms and conditions set forth herein;</p>
           
-          <p><strong>NOW, THEREFORE</strong>, in consideration of the mutual promises and covenants contained herein, the parties agree as follows:</p>
+<p><strong>NOW, THEREFORE</strong>, in consideration of the mutual promises and covenants contained herein, the parties agree as follows:</p>
           
-          <h4 className="text-[#FFBA38] mt-2">1. SERVICES</h4>
+<h4 className="text-[#FFBA38] mt-2">1. SERVICES</h4>
           
-          <p><strong>1.1 Scope of Services.</strong> Agency agrees to provide Client with the marketing services (the "Services") as specified in the bundle and tiers selected by Client through the Agency's online platform and accepted by Client by pressing "accept" on a pop-up confirmation prior to the execution of this Agreement. The details of the selected bundle and tiers, including the specific services, deliverables, and performance metrics, are incorporated herein by reference.</p>
+<p><strong>1.1 Scope of Services.</strong> Agency agrees to provide Client with the marketing services (the "Services") as specified in the bundle and tiers selected by Client through the Agency's online platform and accepted by Client by pressing "accept" on a pop-up confirmation prior to the execution of this Agreement. The details of the selected bundle and tiers, including the specific services, deliverables, and performance metrics, are incorporated herein by reference and will be provided to Client via email following execution of this Agreement.</p>
           
-          <p><strong>1.2 Change Orders.</strong> Any modifications to the Services will require a written change order signed by both parties ("Change Order"). Agency reserves the right to adjust fees and timelines based on approved Change Orders.</p>
+<p><strong>1.2 Change Orders.</strong> Any modifications to the Services will require a written change order signed by both parties ("Change Order"). Agency reserves the right to adjust fees and timelines based on approved Change Orders.</p>
+
+<p><strong>1.3 No Guaranteed Results.</strong> Agency will use commercially reasonable efforts to perform the Services in a professional and workmanlike manner. However, Client acknowledges and agrees that marketing outcomes depend on numerous factors beyond Agency's control, including market conditions, competition, industry trends, Client's products/services, and platform algorithm changes. Agency expressly disclaims any guarantees regarding specific performance metrics, rankings, lead generation volume, conversion rates, or sales results. The testimonials and case studies presented on Agency's website and platform represent specific client results and are not guarantees or promises that Client will achieve similar results. Results may vary substantially based on numerous factors unique to Client's business.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">2. TERM AND TERMINATION</h4>
+<h4 className="text-[#FFBA38] mt-2">2. TERM AND TERMINATION</h4>
           
-          <p><strong>2.1 Term.</strong> This Agreement shall commence on the Effective Date and shall continue for the subscription period of {subLength} months selected by Client as part of the bundle, unless terminated earlier as provided herein.</p>
+<p><strong>2.1 Term.</strong> This Agreement shall commence on the Effective Date and shall continue for the initial subscription period of {subLength} months selected by Client as part of the bundle ("Initial Term"), unless terminated earlier as provided herein. Following the Initial Term, this Agreement will automatically renew for successive one-month periods (each a "Renewal Term") unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term.</p>
+
+<p><strong>2.2 Automatic Renewal Notice.</strong> CLIENT ACKNOWLEDGES THAT THIS AGREEMENT INVOLVES A SUBSCRIPTION THAT WILL AUTOMATICALLY RENEW. Agency will send Client a reminder notice between 15 and 45 days before each automatic renewal date. Client may cancel at any time by contacting support@buzzwordstrategies.com or by logging into their account dashboard.</p>
           
-          <p><strong>2.2 Termination for Convenience.</strong> Either party may terminate this Agreement upon thirty (30) days' written notice to the other party.</p>
+<p><strong>2.3 Termination by Client During Initial Term.</strong> Client may terminate this Agreement during the Initial Term upon thirty (30) days' written notice to Agency, subject to an early termination fee equal to 50% of the remaining subscription fees due for the remainder of the Initial Term. No early termination fee applies after the Initial Term.</p>
           
-          <p><strong>2.3 Termination for Cause.</strong> Either party may terminate this Agreement immediately upon written notice if the other party breaches any material term of this Agreement and fails to cure such breach within fifteen (15) days of receiving written notice of the breach.</p>
+<p><strong>2.4 Termination for Cause.</strong> Either party may terminate this Agreement immediately upon written notice if the other party breaches any material term of this Agreement and fails to cure such breach within fifteen (15) days of receiving written notice of the breach.</p>
           
-          <p><strong>2.4 Effect of Termination.</strong> Upon termination, Client shall pay Agency for all Services performed up to the date of termination. Sections 4, 5, 6, 7, 8, 9, 10, and 11 shall survive termination.</p>
+<p><strong>2.5 Effect of Termination.</strong> Upon termination, Client shall pay Agency for all Services performed up to the date of termination, plus any applicable early termination fee. Sections 4, 5, 6, 7, 8, 9, 10, and 11 shall survive termination. Agency will provide Client with all deliverables completed as of the termination date within fifteen (15) business days.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">3. FEES AND PAYMENT</h4>
+<h4 className="text-[#FFBA38] mt-2">3. FEES AND PAYMENT</h4>
           
-          <p><strong>3.1 Fees.</strong> Client shall pay Agency the fees as specified in the selected bundle and tiers, which include a monthly fee of ${finalMonthly} payable in advance for each month of the {subLength}-month subscription period. All fees are exclusive of taxes, which shall be Client's responsibility.</p>
+<p><strong>3.1 Fees.</strong> Client shall pay Agency the fees as specified in the selected bundle and tiers, which include a monthly fee of ${finalMonthly} payable in advance for each month of the {subLength}-month subscription period. All fees are exclusive of taxes, which shall be Client's responsibility.</p>
           
-          <p><strong>3.2 Payment Terms.</strong> Payment shall be made in advance of services rendered, as specified in the selected bundle. Late payments shall bear interest at a rate of 1.5% per month or the maximum rate permitted by law, whichever is less.</p>
+<p><strong>3.2 Payment Terms.</strong> Client authorizes Agency to charge the payment method provided by Client for all fees when due. Payment shall be made in advance of services rendered, as specified in the selected bundle. Subscription fees will be automatically charged on the same day of each month as the initial subscription date or the nearest available day. Client will receive a receipt for each payment via email. Late payments shall bear interest at a rate of 1.5% per month or the maximum rate permitted by law, whichever is less.</p>
+
+<p><strong>3.3 Refund Policy.</strong> Due to the nature of digital marketing services, no refunds will be issued except in cases of material failure by Agency to deliver the contracted Services. Client shall notify Agency of any material service delivery issues within five (5) business days of such occurrence. Agency shall have fifteen (15) days to remedy any legitimate service issues before a prorated refund will be considered.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">4. INTELLECTUAL PROPERTY RIGHTS</h4>
+<h4 className="text-[#FFBA38] mt-2">4. INTELLECTUAL PROPERTY RIGHTS</h4>
           
-          <p><strong>4.1 Agency Materials.</strong> Agency retains all right, title, and interest in and to all materials, concepts, know-how, techniques, processes, methodologies, and intellectual property owned or developed by Agency prior to or independent of this Agreement ("Agency Materials"). Agency grants Client a non-exclusive, non-transferable license to use Agency Materials solely in connection with the Services and deliverables provided under this Agreement.</p>
+<p><strong>4.1 Agency Materials.</strong> Agency retains all right, title, and interest in and to all materials, concepts, know-how, techniques, processes, methodologies, and intellectual property owned or developed by Agency prior to or independent of this Agreement ("Agency Materials"), including all marketing strategies, processes, workflows, and methodologies. Agency grants Client a non-exclusive, non-transferable license to use Agency Materials solely in connection with the Services and deliverables provided under this Agreement for the duration of the Agreement.</p>
           
-          <p><strong>4.2 Client Materials.</strong> Client retains all right, title, and interest in and to all materials, information, and intellectual property provided by Client to Agency ("Client Materials"). Client grants Agency a non-exclusive, non-transferable license to use Client Materials solely for the purpose of providing the Services.</p>
+<p><strong>4.2 Client Materials.</strong> Client retains all right, title, and interest in and to all materials, information, and intellectual property provided by Client to Agency ("Client Materials"). Client grants Agency a non-exclusive, non-transferable license to use Client Materials solely for the purpose of providing the Services.</p>
           
-          <p><strong>4.3 Deliverables.</strong> Upon full payment of all fees, Agency grants Client a non-exclusive, non-transferable license to use the deliverables created under this Agreement, excluding Agency Materials and Third-Party Materials.</p>
+<p><strong>4.3 Deliverables.</strong> Subject to full payment of all fees, Client shall own all right, title, and interest in the finished content and creative deliverables specifically created for Client as part of the Services, excluding Agency Materials and Third-Party Materials ("Client Deliverables"). For clarity, Client Deliverables include finished advertisements, written content, images, and videos created specifically for Client, but exclude marketing strategies, processes, workflows, methodologies, and templates.</p>
           
-          <p><strong>4.4 Third-Party Materials.</strong> Deliverables may incorporate third-party materials ("Third-Party Materials"). Client's use of Third-Party Materials shall be subject to applicable third-party licenses.</p>
+<p><strong>4.4 Third-Party Materials.</strong> Deliverables may incorporate third-party materials ("Third-Party Materials"), including stock images, music, or software. Client's use of Third-Party Materials shall be subject to applicable third-party licenses, and Client agrees to comply with all such licenses.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">5. CONFIDENTIALITY</h4>
+<h4 className="text-[#FFBA38] mt-2">5. CONFIDENTIALITY</h4>
           
-          <p><strong>5.1 Definition.</strong> "Confidential Information" means all non-public information disclosed by one party to the other that is designated as confidential or reasonably should be understood to be confidential.</p>
+<p><strong>5.1 Definition.</strong> "Confidential Information" means all non-public information disclosed by one party to the other that is designated as confidential or reasonably should be understood to be confidential, including business plans, customer data, financial information, marketing strategies, and technical information.</p>
           
-          <p><strong>5.2 Obligations.</strong> The receiving party shall use Confidential Information solely for performing its obligations under this Agreement and shall protect it using reasonable care. Confidential Information may be disclosed to employees or contractors bound by similar confidentiality obligations.</p>
+<p><strong>5.2 Obligations.</strong> The receiving party shall use Confidential Information solely for performing its obligations under this Agreement and shall protect it using at least the same degree of care it uses to protect its own confidential information, but no less than reasonable care. Confidential Information may be disclosed to employees or contractors bound by similar confidentiality obligations and who need to know such information to perform their duties.</p>
           
-          <p><strong>5.3 Exceptions.</strong> Confidentiality obligations do not apply to information that is publicly available, already known, independently developed, or required to be disclosed by law.</p>
+<p><strong>5.3 Exceptions.</strong> Confidentiality obligations do not apply to information that is (a) publicly available through no fault of the receiving party, (b) already known to the receiving party without restriction before receipt, (c) independently developed by the receiving party without use of Confidential Information, or (d) rightfully obtained from a third party not under a duty of confidentiality.</p>
           
-          <p><strong>5.4 Duration.</strong> Confidentiality obligations shall survive termination of this Agreement for three (3) years.</p>
+<p><strong>5.4 Duration.</strong> Confidentiality obligations shall survive termination of this Agreement for three (3) years.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">6. REPRESENTATIONS AND WARRANTIES</h4>
+<h4 className="text-[#FFBA38] mt-2">6. REPRESENTATIONS AND WARRANTIES</h4>
           
-          <p><strong>6.1 Mutual Representations.</strong> Each party represents that it has the authority to enter into this Agreement and that its performance will not violate any other agreements or laws.</p>
+<p><strong>6.1 Mutual Representations.</strong> Each party represents that it has the authority to enter into this Agreement and that its performance will not violate any other agreements or applicable laws.</p>
           
-          <p><strong>6.2 Agency Warranties.</strong> Agency warrants that the Services will be performed in a professional manner. Agency disclaims all other warranties, express or implied.</p>
+<p><strong>6.2 Agency Warranties.</strong> Agency warrants that the Services will be performed in a professional manner consistent with industry standards. TO THE MAXIMUM EXTENT PERMITTED BY LAW, AGENCY DISCLAIMS ALL OTHER WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.</p>
           
-          <p><strong>6.3 Client Warranties.</strong> Client warrants that it owns or has the right to use all Client Materials and that such materials do not infringe any third-party rights.</p>
+<p><strong>6.3 Client Warranties.</strong> Client warrants that (a) it owns or has the right to use all Client Materials and that such materials do not infringe any third-party rights; (b) it will use the Services and deliverables in compliance with all applicable laws and regulations; and (c) it will provide timely and accurate information necessary for Agency to perform the Services.</p>
+
+<p><strong>6.4 Compliance with Laws and Platform Policies.</strong> Client acknowledges that digital marketing platforms (including Google, Meta, and TikTok) have specific advertising policies governing content, targeting, and data collection. Client is responsible for ensuring that its products, services, and website comply with all applicable platform policies and laws. Agency will not knowingly create ads that violate platform policies but cannot guarantee platform approval of all advertisements.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">7. LIMITATION OF LIABILITY</h4>
+<h4 className="text-[#FFBA38] mt-2">7. LIMITATION OF LIABILITY</h4>
           
-          <p><strong>7.1 Exclusion of Damages.</strong> Neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement.</p>
+<p><strong>7.1 Exclusion of Damages.</strong> TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, NEITHER PARTY SHALL BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION DAMAGES FOR LOST PROFITS, LOST REVENUES, LOST BUSINESS OPPORTUNITIES, LOSS OF USE, OR LOSS OF DATA, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
           
-          <p><strong>7.2 Cap on Liability.</strong> Except for breaches of confidentiality or intellectual property rights, each party's total liability shall not exceed the fees paid by Client to Agency under this Agreement.</p>
+<p><strong>7.2 Cap on Liability.</strong> EXCEPT FOR BREACHES OF CONFIDENTIALITY OR INTELLECTUAL PROPERTY RIGHTS, EACH PARTY'S TOTAL CUMULATIVE LIABILITY ARISING OUT OF OR RELATED TO THIS AGREEMENT, WHETHER IN CONTRACT, TORT OR OTHERWISE, SHALL NOT EXCEED THE TOTAL AMOUNT OF FEES PAID BY CLIENT TO AGENCY UNDER THIS AGREEMENT DURING THE TWELVE (12) MONTHS PRECEDING THE FIRST INCIDENT OUT OF WHICH THE LIABILITY AROSE.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">8. INDEMNIFICATION</h4>
+<h4 className="text-[#FFBA38] mt-2">8. INDEMNIFICATION</h4>
           
-          <p><strong>8.1 Agency Indemnification.</strong> Agency shall indemnify Client against third-party claims arising from Agency's breach of this Agreement or infringement of intellectual property rights (excluding Client Materials and Third-Party Materials).</p>
+<p><strong>8.1 Agency Indemnification.</strong> Agency shall defend, indemnify, and hold harmless Client against third-party claims, actions, or proceedings alleging that the Services (excluding Client Materials and Third-Party Materials) infringe the intellectual property rights of a third party, provided that Client (a) promptly notifies Agency in writing of the claim; (b) gives Agency sole control over the defense and settlement of the claim; and (c) provides all reasonable assistance to Agency.</p>
           
-          <p><strong>8.2 Client Indemnification.</strong> Client shall indemnify Agency against third-party claims arising from Client's breach of this Agreement, infringement by Client Materials, or Client's use of deliverables.</p>
+<p><strong>8.2 Client Indemnification.</strong> Client shall defend, indemnify, and hold harmless Agency against third-party claims, actions, or proceedings arising from (a) Client Materials; (b) Client's use of the Services or deliverables in violation of this Agreement or applicable law; (c) Client's products or services; or (d) Client's breach of this Agreement.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">9. RESULTS AND PERFORMANCE</h4>
+<h4 className="text-[#FFBA38] mt-2">9. CLIENT RESPONSIBILITIES</h4>
           
-          <p><strong>9.1 No Guarantees.</strong> Agency does not guarantee any specific results or outcomes from the Services. Marketing outcomes depend on factors beyond Agency's control, including market conditions, competition, and Client's products/services.</p>
+<p><strong>9.1 Cooperation.</strong> Client acknowledges that its timely provision of and access to information, materials, and approvals is essential to Agency's delivery of the Services. Client shall designate a primary contact for communication and shall respond to Agency's requests for feedback, approvals, or information within three (3) business days unless otherwise agreed.</p>
           
-          <p><strong>9.2 Client Responsibilities.</strong> Client acknowledges that successful outcomes require Client's active participation and timely fulfillment of responsibilities as outlined in the selected bundle and tiers.</p>
+<p><strong>9.2 Platform Access.</strong> Client shall provide Agency with necessary access to marketing platforms, websites, and analytics tools required to perform the Services. Client remains responsible for maintaining accurate login credentials and security for all platforms.</p>
+
+<p><strong>9.3 Ad Account Spending.</strong> For services related to advertising management, Client acknowledges that ad spend is separate from Agency's management fee. Client is solely responsible for funding the appropriate advertising platform accounts (Google Ads, Meta Ads, etc.) and maintaining sufficient budget to run campaigns. Agency will not be responsible for costs related to platform advertising spending.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">10. DATA PRIVACY AND COMPLIANCE</h4>
+<h4 className="text-[#FFBA38] mt-2">10. DATA PRIVACY AND COMPLIANCE</h4>
           
-          <p><strong>10.1 Data Privacy.</strong> Each party shall comply with applicable data protection laws. Client shall obtain necessary consents for any personal data processed in connection with the Services.</p>
+<p><strong>10.1 Data Privacy.</strong> Each party shall comply with applicable data protection laws, including the California Consumer Privacy Act and California Privacy Rights Act where applicable. Client shall obtain all necessary consents for the collection, use, and processing of any personal data processed in connection with the Services and shall maintain a privacy policy that accurately discloses its data practices.</p>
           
-          <p><strong>10.2 Regulatory Compliance.</strong> Client is responsible for ensuring that all marketing materials and campaigns comply with applicable laws and regulations.</p>
+<p><strong>10.2 Regulatory Compliance.</strong> Client is responsible for ensuring that all marketing materials and campaigns comply with applicable laws and regulations, including but not limited to the CAN-SPAM Act, FTC regulations regarding deceptive advertising, and industry-specific regulations applicable to Client's business.</p>
+
+<p><strong>10.3 Privacy Notice.</strong> Agency collects and processes personal information as described in the Agency's Privacy Policy, available at https://www.buzzwordstrategies.com/privacy. By entering into this Agreement, Client acknowledges receipt of this Privacy Policy.</p>
           
-          <h4 className="text-[#FFBA38] mt-2">11. GENERAL PROVISIONS</h4>
+<h4 className="text-[#FFBA38] mt-2">11. GENERAL PROVISIONS</h4>
           
-          <p><strong>11.1 Independent Contractors.</strong> The parties are independent contractors, and nothing in this Agreement creates a partnership, joint venture, or employment relationship.</p>
+<p><strong>11.1 Independent Contractors.</strong> The parties are independent contractors. Nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship.</p>
           
-          <p><strong>11.2 Non-Solicitation.</strong> During the term and for one (1) year thereafter, neither party shall solicit or hire the other's employees or contractors involved in the Services.</p>
+<p><strong>11.2 Non-Solicitation.</strong> During the term of this Agreement and for one (1) year thereafter, neither party shall directly or indirectly solicit or hire the other party's employees or contractors who were involved in providing or receiving the Services, without the other party's prior written consent.</p>
           
-          <p><strong>11.3 Force Majeure.</strong> Neither party shall be liable for delays due to causes beyond its reasonable control.</p>
+<p><strong>11.3 Force Majeure.</strong> Neither party shall be liable for delays due to causes beyond its reasonable control, including but not limited to acts of God, changes in law, labor disputes, and significant internet disruptions.</p>
           
-          <p><strong>11.4 Assignment.</strong> Neither party may assign this Agreement without the other's written consent.</p>
+<p><strong>11.4 Assignment.</strong> Neither party may assign this Agreement without the other's written consent, which shall not be unreasonably withheld. Notwithstanding the foregoing, either party may assign this Agreement to a successor in connection with a merger, acquisition, or sale of all or substantially all of its assets.</p>
           
-          <p><strong>11.5 Governing Law.</strong> This Agreement shall be governed by the laws of Wyoming.</p>
+<p><strong>11.5 Governing Law.</strong> This Agreement shall be governed by the laws of the State of Wyoming, without regard to its conflict of law principles. For any Client residing in California, California consumer protection laws shall apply where required by law.</p>
           
-          <p><strong>11.6 Dispute Resolution.</strong> Disputes shall be resolved through negotiation, mediation, or, if necessary, in the courts of Wyoming.</p>
+<p><strong>11.6 Dispute Resolution.</strong> Any dispute arising out of or related to this Agreement shall be resolved through good faith negotiation between the parties. If the dispute cannot be resolved through negotiation, either party may initiate mediation through a mutually agreed mediator. If mediation is unsuccessful, the parties may pursue their rights through litigation in the courts of Wyoming, and each party consents to the personal jurisdiction of such courts.</p>
           
-          <p><strong>11.7 Entire Agreement.</strong> This Agreement, including the details of the bundle named "{bundleName || 'Marketing Bundle'}" with services: {selectedServices}, as accepted by Client, constitutes the entire agreement between the parties.</p>
-        </div>
+<p><strong>11.7 Entire Agreement.</strong> This Agreement, including the details of the bundle named "{bundleName || 'Marketing Bundle'}" with services: {selectedServices}, as accepted by Client, constitutes the entire agreement between the parties and supersedes all prior and contemporaneous agreements, proposals, or representations, written or oral, concerning its subject matter.</p>
+
+<p><strong>11.8 Electronic Signature.</strong> The parties agree that electronic signatures shall have the same force and effect as original signatures. By typing their name below and clicking "Agree & Continue to Payment," Client acknowledges that they have read, understand, and agree to be bound by the terms of this Agreement.</p>
+
+<p><strong>11.9 Notice.</strong> All notices under this Agreement must be in writing and will be deemed given when delivered personally, by email (with confirmation of receipt), or by certified or registered mail to the address specified by the receiving party.</p>
+
+<p><strong>11.10 Severability.</strong> If any provision of this Agreement is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary so that this Agreement will otherwise remain in full force and effect.</p>
       </div>
       
       {/* Agreement checkbox */}
