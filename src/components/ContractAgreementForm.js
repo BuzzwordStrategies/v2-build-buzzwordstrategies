@@ -115,7 +115,15 @@ const ContractAgreementForm = ({
       
       // Serialize the PDF to bytes
       const pdfBytes = await pdfDoc.save();
-      return Buffer.from(pdfBytes).toString('base64');
+      
+      // Convert Uint8Array to base64 string using browser APIs instead of Node.js Buffer
+      const bytes = new Uint8Array(pdfBytes);
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
     } catch (error) {
       console.error('Error generating PDF:', error);
       throw error;
