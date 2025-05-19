@@ -784,7 +784,7 @@ const BundleBuilder = () => {
     }
   }, [saveToSupabase]);
 
-  const handleAgreementSubmit = useCallback(async (agreementData) => {
+const handleAgreementSubmit = useCallback(async (agreementData) => {
     setAgreementInfo(agreementData);
     setIsLoading(true);
     
@@ -810,30 +810,60 @@ const BundleBuilder = () => {
         agreementInfo: agreementData // This now includes the PDF
       };
       
-      // Save agreement data with PDF to Supabase
-      const response = await axios.post('/.netlify/functions/save-agreement', payload);
-      
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to save agreement');
+      // Try the improved version first
+      try {
+        // Save agreement data with PDF to Supabase using improved function
+        const response = await axios.post('/.netlify/functions/save-agreement-improved', payload);
+        
+        if (!response.data.success) {
+          throw new Error(response.data.message || 'Failed to save agreement');
+        }
+        
+        console.log('Agreement saved successfully');
+        
+        // Redirect to Stripe checkout
+        window.location.href = response.data.redirectUrl;
+      } catch (improvedError) {
+        console.error('Error with improved function:', improvedError);
+        
+        // Fall back to original function
+        console.log('Falling back to original save-agreement function');
+        const fallbackResponse = await axios.post('/.netlify/functions/save-agreement', payload);
+        
+        if (!fallbackResponse.data.success) {
+          throw new Error(fallbackResponse.data.message || 'Failed to save agreement with fallback');
+        }
+        
+        // Redirect to Stripe checkout
+        window.location.href = fallbackResponse.data.redirectUrl;
       }
-      
-      // Directly create query params for Stripe checkout
-      const queryParams = new URLSearchParams({
-        bundleID: payload.bundleID,
-        bundleName: payload.bundleName,
-        finalMonthly: payload.finalMonthly,
-        subLength: payload.subLength,
-        selectedServices: selectedServicesStr
-      }).toString();
-      
-      // Direct redirect to Stripe checkout
-      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
     } catch (error) {
       console.error('Error:', error);
-      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-      setIsLoading(false);
+      
+      // Last resort - try to go to Stripe directly
+      try {
+        // Format the selected services string
+        const selectedServicesStr = Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => `${product}: ${tier}`)
+          .join(', ');
+            
+        // Direct redirect to Stripe checkout
+        const queryParams = new URLSearchParams({
+          bundleID: bundleID,
+          bundleName: bundleName || 'My Bundle',
+          finalMonthly: final.toFixed(2),
+          subLength: subLength,
+          selectedServices: selectedServicesStr
+        }).toString();
+        
+        window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+      } catch (lastError) {
+        alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
+        setIsLoading(false);
+      }
     }
-  }, [bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
+  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
 
   // Handle product selection with auto-scroll
   const handleProductSelect = useCallback((product) => {
