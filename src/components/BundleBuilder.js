@@ -539,9 +539,9 @@ const detailedFeatures = {
   "Social Posts": {
     Base: {
       features: [
-        "• Four posts monthly",
-        "• Single platform focus",
-        "• Licensed imagery",
+        "• 10 Posts Monthly",
+        "• 2 Platforms",
+        "• Custom Branded Creative,
         "• Strategic scheduling",
         "• Monthly analytics report"
       ]
@@ -549,19 +549,20 @@ const detailedFeatures = {
     Standard: {
       features: [
         "• Includes all Base tier services",
-        "• 16 posts monthly",
-        "• Three platform distribution",
-        "• Custom graphics design",
+        "• 15 posts monthly",
+        "• 1 Short form reel",
+        "• 3 platform distribution",
+        "• Custom Branded Creative,
         "• Engagement monitoring"
       ]
     },
     Premium: {
       features: [
         "• Includes all Standard tier services",
-        "• 28 posts monthly",
-        "• Six platform coverage",
-        "• Video content creation",
-        "• Community management"
+        "• 30 posts monthly",
+        "• 5 platform coverage",
+        "• Custom branded Creative",
+        "• Engagement monitoring"
       ]
     }
   }
