@@ -541,7 +541,7 @@ const detailedFeatures = {
       features: [
         "• 10 Posts Monthly",
         "• 2 Platforms",
-        "• Custom Branded Creative,
+        "• Custom Branded Creative",
         "• Strategic scheduling",
         "• Monthly analytics report"
       ]
@@ -552,7 +552,7 @@ const detailedFeatures = {
         "• 15 posts monthly",
         "• 1 Short form reel",
         "• 3 platform distribution",
-        "• Custom Branded Creative,
+        "• Custom Branded Creative",
         "• Engagement monitoring"
       ]
     },
