@@ -1,18 +1,16 @@
-// src/components/BundleBuilder.js
+// Professional Bundle Builder with Robinhood-inspired design and integrated chatbot
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import UserInfoForm from './UserInfoForm';
 import ContractAgreementForm from './ContractAgreementForm';
-import axios from 'axios';
 
-// Move all static data outside the component
-// Products array 
+// Static data
 const products = [
   "Meta Ads", "Google Ads", "TikTok Ads", "SEO",
   "GBP Ranker", "Backlinks", "Content", "Social Posts"
 ];
 
-// Service descriptions for info popups
+// Service descriptions
 const serviceDescriptions = {
   "Meta Ads": "Reach your ideal customers through targeted Facebook and Instagram advertising. Our Meta Ads service connects you with potential customers based on demographics, interests, and behaviors that align with your business goals.",
   "Google Ads": "Get your business in front of customers actively searching for your products or services. Google Ads puts you at the top of search results when your potential customers are looking for what you offer.",
@@ -24,7 +22,56 @@ const serviceDescriptions = {
   "Social Posts": "Maintain an active and engaging social media presence across major platforms. Regular posting keeps your brand top-of-mind and helps nurture relationships with your audience."
 };
 
-// Case studies and success metrics for each service
+// Professional SVG icons as components
+const ServiceIcon = ({ service, className = "w-6 h-6" }) => {
+  const icons = {
+    "Meta Ads": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 11v8a1 1 0 01-1 1H4a1 1 0 01-1-1v-7a1 1 0 011-1h3zm7 0v8a1 1 0 01-1 1h-2a1 1 0 01-1-1v-8m4 0V7a4 4 0 00-8 0v4m16 1v8a1 1 0 01-1 1h-2a1 1 0 01-1-1v-8m4 0h-4" />
+      </svg>
+    ),
+    "Google Ads": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+    "TikTok Ads": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    ),
+    "SEO": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+    ),
+    "GBP Ranker": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    "Backlinks": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      </svg>
+    ),
+    "Content": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    ),
+    "Social Posts": (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    )
+  };
+  
+  return icons[service] || icons["Meta Ads"];
+};
+
+// Success stories
 const serviceSuccessStories = {
   "Meta Ads": "A dental clinic in Denver increased new patient appointments by 43% in just 3 months using our Meta Ads service, with a 5.2x return on ad spend. Individual results may vary based on industry, competition, and market conditions.",
   "Google Ads": "A local fitness center generated 127 new membership sign-ups in their first quarter with our Google Ads management, averaging just $38 per acquisition. Results will vary based on your specific business goals and market.",
@@ -36,7 +83,7 @@ const serviceSuccessStories = {
   "Social Posts": "A fitness studio increased their social following by 324% in 6 months while generating consistent client referrals through engagement. Social media success depends on content quality and audience engagement."
 };
 
-// Product and pricing data
+// Pricing data
 const pricing = {
   "Meta Ads": { Base: 770, Standard: 980, Premium: 1410 },
   "Google Ads": { Base: 770, Standard: 980, Premium: 1410 },
@@ -52,7 +99,6 @@ const businessTypes = ["Dental Clinic", "Dental Lab", "Small Business", "Fitness
 
 // Industry-specific tier descriptions
 const bestForIndustry = {
-  // Dental Clinic descriptions
   "Dental Clinic": {
     "Meta Ads": {
       Base: "Want to fill empty chairs & attract patients seeking routine care",
@@ -95,7 +141,6 @@ const bestForIndustry = {
       Premium: "Need an always-active social presence that converts"
     }
   },
-  // Dental Lab descriptions
   "Dental Lab": {
     "Meta Ads": {
       Base: "Want local dentists to discover your lab services",
@@ -138,7 +183,6 @@ const bestForIndustry = {
       Premium: "Need to be highly visible on social media"
     }
   },
-  // Small Business descriptions
   "Small Business": {
     "Meta Ads": {
       Base: "Want to test if social media can bring customers",
@@ -181,7 +225,6 @@ const bestForIndustry = {
       Premium: "Need social media to drive significant revenue"
     }
   },
-  // Fitness descriptions
   "Fitness": {
     "Meta Ads": {
       Base: "Want to fill classes & attract new members locally",
@@ -224,7 +267,6 @@ const bestForIndustry = {
       Premium: "Need non-stop engaging fitness content"
     }
   },
-  // Generic "Something Else" descriptions
   "Something Else": {
     "Meta Ads": {
       Base: "Get started with targeted social media advertising",
@@ -266,50 +308,6 @@ const bestForIndustry = {
       Standard: "Drive engagement & build loyal following",
       Premium: "Transform social media into a revenue engine"
     }
-  }
-};
-
-// Generic best for (fallback)
-const genericBestFor = {
-  "Meta Ads": {
-    Base: "Want to test if social ads can grow your business",
-    Standard: "Ready to scale successful campaigns & reach more customers",
-    Premium: "Need maximum reach & sophisticated targeting"
-  },
-  "Google Ads": {
-    Base: "Want your first reliable source of online leads",
-    Standard: "Ready to expand reach & capture more searches",
-    Premium: "Need to improve visibility in search results"
-  },
-  "TikTok Ads": {
-    Base: "Want to explore viral marketing potential",
-    Standard: "Ready to build an engaged community",
-    Premium: "Need to scale viral content into revenue"
-  },
-  "SEO": {
-    Base: "Want to be found online by potential customers",
-    Standard: "Ready to outrank your competition",
-    Premium: "Need to improve visibility in relevant searches"
-  },
-  "GBP Ranker": {
-    Base: "Want better local search visibility",
-    Standard: "Ready to become the top local choice",
-    Premium: "Need to improve local search results"
-  },
-  "Backlinks": {
-    Base: "Want Google to trust your website more",
-    Standard: "Ready to build serious online authority",
-    Premium: "Need strong search visibility"
-  },
-  "Content": {
-    Base: "Want to start attracting customers with content",
-    Standard: "Ready to establish thought leadership",
-    Premium: "Need to be the industry's go-to resource"
-  },
-  "Social Posts": {
-    Base: "Want to build initial social presence",
-    Standard: "Ready for consistent social engagement",
-    Premium: "Need social media as a revenue driver"
   }
 };
 
@@ -568,8 +566,7 @@ const detailedFeatures = {
   }
 };
 
-// Helper functions moved outside component for better performance
-// Calculate discounts
+// Helper functions
 const getSubscriptionDiscount = (months) => {
   const discounts = {
     3: 0, 6: 2, 9: 3.5, 12: 5, 15: 6.5, 18: 8, 21: 9, 24: 10
@@ -584,7 +581,6 @@ const getBundleDiscount = (num) => {
   return discounts[num] || 10;
 };
 
-// Debounce function to prevent too many saves
 const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -597,16 +593,164 @@ const debounce = (func, wait) => {
   };
 };
 
-// Main component
-const BundleBuilder = () => {
-  // Refs for scrolling
-  const productsSectionRef = useRef(null);
-  const tiersSectionRef = useRef(null);
-  const pricingSectionRef = useRef(null);
+// Subtle animated gradient background
+const AnimatedBackground = ({ isDarkMode }) => {
+  const canvasRef = useRef(null);
   
-  // Save timeout ref
-  const saveTimeoutRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let time = 0;
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    const animate = () => {
+      time += 0.001;
+      
+      if (isDarkMode) {
+        // Dark mode: subtle gold gradient
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, `rgba(210, 140, 0, ${0.02 + Math.sin(time) * 0.01})`);
+        gradient.addColorStop(0.5, `rgba(26, 26, 26, 0)`);
+        gradient.addColorStop(1, `rgba(210, 140, 0, ${0.02 + Math.cos(time) * 0.01})`);
+        ctx.fillStyle = gradient;
+      } else {
+        // Light mode: subtle purple to pink gradient
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, `rgba(147, 51, 234, ${0.03 + Math.sin(time) * 0.01})`);
+        gradient.addColorStop(0.5, `rgba(255, 255, 255, 0)`);
+        gradient.addColorStop(1, `rgba(236, 72, 153, ${0.03 + Math.cos(time) * 0.01})`);
+        ctx.fillStyle = gradient;
+      }
+      
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationId);
+    };
+  }, [isDarkMode]);
+  
+  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
+};
 
+// Chatbot Component
+const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const chatbotRef = useRef(null);
+  
+  useEffect(() => {
+    // Load Zapier script
+    const script = document.createElement('script');
+    script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
+    script.type = 'module';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    // Set up bundle builder integration
+    window.buzzwordBundleBuilder = {
+      currentBundle: bundleData,
+      updateBundle: (updates) => {
+        onUpdateBundle(updates);
+      },
+      getServices: () => products,
+      getPricing: () => pricing,
+      getBusinessTypes: () => businessTypes
+    };
+    
+    return () => {
+      document.body.removeChild(script);
+      delete window.buzzwordBundleBuilder;
+    };
+  }, [bundleData, onUpdateBundle]);
+  
+  const theme = {
+    dark: {
+      bg: 'bg-[#1A1A1A]',
+      border: 'border-gray-800',
+      text: 'text-white',
+      buttonBg: 'bg-[#D28C00]',
+      buttonHover: 'hover:bg-[#B77A00]'
+    },
+    light: {
+      bg: 'bg-white',
+      border: 'border-gray-200',
+      text: 'text-gray-900',
+      buttonBg: 'bg-purple-600',
+      buttonHover: 'hover:bg-purple-700'
+    }
+  };
+  
+  const currentTheme = isDarkMode ? theme.dark : theme.light;
+  
+  return (
+    <div className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
+      isExpanded ? 'w-[400px] h-[600px]' : 'w-auto h-auto'
+    }`}>
+      {!isExpanded ? (
+        // Minimized state - looks like a search bar
+        <button
+          onClick={() => {
+            setIsExpanded(true);
+            setHasInteracted(true);
+          }}
+          className={`flex items-center gap-3 px-4 py-3 ${currentTheme.bg} ${currentTheme.border} border rounded-full shadow-lg transition-all hover:shadow-xl ${currentTheme.buttonBg} ${currentTheme.buttonHover}`}
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+          </svg>
+          <span className="text-white font-medium">Ask a question</span>
+        </button>
+      ) : (
+        // Expanded state
+        <div className={`flex flex-col h-full ${currentTheme.bg} ${currentTheme.border} border rounded-lg shadow-2xl`}>
+          <div className={`flex items-center justify-between p-3 ${currentTheme.border} border-b`}>
+            <h3 className={`font-medium ${currentTheme.text}`}>Bundle Assistant</h3>
+            <button
+              onClick={() => setIsExpanded(false)}
+              className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
+            >
+              <svg className={`w-5 h-5 ${currentTheme.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden" ref={chatbotRef}>
+            <zapier-interfaces-chatbot-embed 
+              is-popup='false' 
+              chatbot-id='cma6zv294001y12wdgvajk0lj' 
+              height='100%' 
+              width='100%'
+            ></zapier-interfaces-chatbot-embed>
+          </div>
+        </div>
+      )}
+      
+      {/* Pulse animation for attention */}
+      {!hasInteracted && !isExpanded && (
+        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-75 animate-pulse"></div>
+      )}
+    </div>
+  );
+};
+
+// Main Component
+const BundleBuilder = () => {
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
   // State variables
   const [selectedTiers, setSelectedTiers] = useState({});
   const [currentlyOpenService, setCurrentlyOpenService] = useState(products[0]);
@@ -633,10 +777,10 @@ const BundleBuilder = () => {
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
   // Step indicator state
-  const [currentStep, setCurrentStep] = useState(1); // 1: Industry, 2: Services, 3: Tiers
-
+  const [currentStep, setCurrentStep] = useState(1);
+  
   // Form step state variables
-  const [formStep, setFormStep] = useState(0); // 0: bundle confirmation, 1: user info, 2: contract agreement
+  const [formStep, setFormStep] = useState(0);
   const [userInfo, setUserInfo] = useState(null);
   const [agreementInfo, setAgreementInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -644,20 +788,63 @@ const BundleBuilder = () => {
   
   // Subscription acknowledgment state
   const [subscriptionAcknowledged, setSubscriptionAcknowledged] = useState(false);
-
+  
   // Bundle ID state
   const [bundleID, setBundleID] = useState('');
   
   // Flag to prevent initial saving
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-
-  // Memoize calculation of final price to avoid recalculation on every render
+  
+  // Refs for scrolling
+  const productsSectionRef = useRef(null);
+  const tiersSectionRef = useRef(null);
+  const pricingSectionRef = useRef(null);
+  
+  // Save timeout ref
+  const saveTimeoutRef = useRef(null);
+  
+  // Theme configuration
+  const theme = {
+    dark: {
+      bg: 'bg-black',
+      bgSecondary: 'bg-[#0A0A0A]',
+      bgTertiary: 'bg-[#141414]',
+      cardBg: 'bg-[#1A1A1A]',
+      text: 'text-white',
+      textSecondary: 'text-gray-400',
+      accent: 'bg-[#D28C00]',
+      accentHover: 'hover:bg-[#B77A00]',
+      accentText: 'text-[#D28C00]',
+      border: 'border-gray-800',
+      borderAccent: 'border-[#D28C00]',
+      green: 'text-green-500',
+      red: 'text-red-500'
+    },
+    light: {
+      bg: 'bg-white',
+      bgSecondary: 'bg-gray-50',
+      bgTertiary: 'bg-gray-100',
+      cardBg: 'bg-white',
+      text: 'text-gray-900',
+      textSecondary: 'text-gray-600',
+      accent: 'bg-purple-600',
+      accentHover: 'hover:bg-purple-700',
+      accentText: 'text-purple-600',
+      border: 'border-gray-200',
+      borderAccent: 'border-purple-600',
+      green: 'text-green-600',
+      red: 'text-red-600'
+    }
+  };
+  
+  const currentTheme = isDarkMode ? theme.dark : theme.light;
+  
+  // Calculate final price
   const calculateFinalPrice = useCallback(() => {
     const selected = Object.entries(selectedTiers).filter(([_, tier]) => tier);
     const productCount = selected.length;
     let total = selected.reduce((sum, [service, tier]) => sum + pricing[service][tier], 0);
 
-    // Bundle discount is 0 for 0 or 1 product
     const bundleDiscount = productCount <= 1 ? 0 : getBundleDiscount(productCount);
     const subDiscount = getSubscriptionDiscount(subLength);
 
@@ -668,39 +855,28 @@ const BundleBuilder = () => {
     return { final, totalSaved, selected, bundleDiscount, productCount };
   }, [selectedTiers, subLength]);
 
-  // Destructure calculated values outside JSX for better performance
   const { final, totalSaved, selected, bundleDiscount, productCount } = calculateFinalPrice();
   
-  // Discount calculations - both should be 0 if no products selected
   const subscriptionDiscount = productCount > 0 ? getSubscriptionDiscount(subLength) : 0;
   const totalDiscountPercentage = bundleDiscount + subscriptionDiscount;
-  const maxDiscount = 20;
-
+  
   // Get best for text based on selected business type
   const getBestForText = useCallback((service, tier) => {
     if (selectedBusiness && bestForIndustry[selectedBusiness]) {
       return bestForIndustry[selectedBusiness][service][tier];
     }
-    return genericBestFor[service][tier];
+    return bestForIndustry["Something Else"][service][tier];
   }, [selectedBusiness]);
-
-  // Function to save bundle data to Supabase with error handling
+  
+  // Mock save function (replace with your actual implementation)
   const saveToSupabase = useCallback(async (step, immediate = false) => {
-    // Don't save during initial load
     if (!initialLoadComplete && !immediate) {
       return bundleID;
     }
     
     try {
-      // Get current bundle data
-      // Don't create a new bundleID if we already have one
-      const currentBundleID = bundleID;
+      const currentBundleID = bundleID || `bwb-${uuidv4()}`;
       
-      if (!currentBundleID) {
-        console.error('No bundleID found when trying to save to Supabase');
-        return null;
-      }
-        
       const selectedServices = Object.entries(selectedTiers)
         .filter(([, tier]) => tier)
         .map(([product, tier]) => `${product}: ${tier}`)
@@ -718,44 +894,78 @@ const BundleBuilder = () => {
         userInfo: step >= 1 ? userInfo : null,
         agreementInfo: step >= 2 ? agreementInfo : null
       };
-
-      // Save to either our Express server (if deployed) or use Netlify function
-      try {
-        // Try Express endpoint first
-        await axios.post('/api/supabase/save-bundle', bundleData);
-      } catch (expressError) {
-        // Fallback to Netlify function
-        await axios.post('/.netlify/functions/save-bundle-data', bundleData);
-      }
-
+      
+      // Your save implementation here
+      console.log('Saving bundle data:', bundleData);
+      
       return currentBundleID;
     } catch (error) {
       console.error('Error saving bundle data:', error);
-      return bundleID || null; // Return existing bundleID if there's an error
+      return bundleID || null;
     }
   }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, userInfo, agreementInfo, initialLoadComplete]);
-
-  // Debounced save function to prevent too many API calls
+  
   const debouncedSave = useCallback(
     debounce((step) => {
       saveToSupabase(step);
     }, 2000),
     [saveToSupabase]
   );
-
-  // Handle tier selection with improved error handling
+  
+  // Handle tier selection
   const handleTierSelect = useCallback(async (service, tier) => {
     setSelectedTiers(prev => ({
       ...prev,
       [service]: prev[service] === tier ? null : tier
     }));
     
-    // If we have a bundleID, save after a delay
     if (bundleID && initialLoadComplete) {
       debouncedSave(0);
     }
   }, [bundleID, debouncedSave, initialLoadComplete]);
-
+  
+  // Handle product selection with smooth scroll
+  const handleProductSelect = useCallback((product) => {
+    setCurrentlyOpenService(product);
+    setCurrentStep(3);
+    
+    setTimeout(() => {
+      if (tiersSectionRef.current) {
+        const yOffset = -80;
+        const y = tiersSectionRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 300);
+  }, []);
+  
+  // Handle bundle updates from chatbot
+  const handleChatbotBundleUpdate = useCallback((updates) => {
+    if (updates.selectedBusiness) {
+      setSelectedBusiness(updates.selectedBusiness);
+      setCurrentStep(2);
+    }
+    
+    if (updates.selectedTiers) {
+      setSelectedTiers(prev => ({
+        ...prev,
+        ...updates.selectedTiers
+      }));
+    }
+    
+    if (updates.subLength) {
+      setSubLength(updates.subLength);
+    }
+    
+    if (updates.bundleName) {
+      setBundleName(updates.bundleName);
+    }
+    
+    // Save the updates
+    if (initialLoadComplete) {
+      debouncedSave(0);
+    }
+  }, [debouncedSave, initialLoadComplete]);
+  
   // Open modal for tier details
   const openTierDetailsModal = useCallback((service, tier) => {
     setModalService(service);
@@ -772,18 +982,17 @@ const BundleBuilder = () => {
     });
     setShowServiceInfoModal(true);
   }, []);
-
-  // Form submission handlers with improved error handling
+  
+  // Form submission handlers
   const handleBundleConfirm = useCallback(async () => {
     if (!subscriptionAcknowledged) {
       alert("Please acknowledge the subscription terms by checking the box.");
       return;
     }
     
-    setBundleRejected(false); // Reset if previously rejected
+    setBundleRejected(false);
     
     try {
-      // Save bundle data at step 0 (bundle confirmation)
       await saveToSupabase(0, true);
       setFormStep(1);
     } catch (error) {
@@ -791,95 +1000,54 @@ const BundleBuilder = () => {
       alert('There was an error saving your bundle. Please try again.');
     }
   }, [subscriptionAcknowledged, saveToSupabase]);
-
+  
   const handleBundleReject = useCallback(() => {
     setBundleRejected(true);
     setShowPurchaseModal(false);
   }, []);
-
+  
   const handleUserInfoSubmit = useCallback(async (formData) => {
     try {
       setUserInfo(formData);
-      
-      // Save bundle data at step 1 (user info)
       await saveToSupabase(1, true);
-      setFormStep(2); // Move to contract agreement
+      setFormStep(2);
     } catch (error) {
       console.error('Error submitting user info:', error);
       alert('There was an error saving your information. Please try again.');
     }
   }, [saveToSupabase]);
-
+  
   const handleAgreementSubmit = useCallback(async (agreementData) => {
     setAgreementInfo(agreementData);
     setIsLoading(true);
     
     try {
-      // Save bundle data at step 2 (agreement)
       const finalBundleID = await saveToSupabase(2, true);
       
-      // Format the selected services string
       const selectedServicesStr = Object.entries(selectedTiers)
         .filter(([, tier]) => tier)
         .map(([product, tier]) => `${product}: ${tier}`)
         .join(', ');
       
-      // Create a full payload with all needed data including PDF
-      const payload = {
+      // Create payment URL (replace with your actual implementation)
+      const queryParams = new URLSearchParams({
         bundleID: finalBundleID,
         bundleName: bundleName || 'My Bundle',
-        subLength,
         finalMonthly: final.toFixed(2),
-        selectedServices: selectedServicesStr,
-        selectedTiers,
-        userInfo,
-        agreementInfo: agreementData // This now includes the PDF
-      };
+        subLength: subLength,
+        selectedServices: selectedServicesStr
+      }).toString();
       
-      // Try to save agreement
-      try {
-        // Save agreement data with PDF to Supabase
-        const response = await axios.post('/.netlify/functions/save-agreement', payload);
-        
-        if (!response.data.success) {
-          throw new Error(response.data.message || 'Failed to save agreement');
-        }
-        
-        // Redirect to Stripe checkout
-        window.location.href = response.data.redirectUrl;
-      } catch (error) {
-        console.error('Error:', error);
-        
-        // Direct redirect to Stripe checkout as fallback
-        const queryParams = new URLSearchParams({
-          bundleID: finalBundleID,
-          bundleName: bundleName || 'My Bundle',
-          finalMonthly: final.toFixed(2),
-          subLength: subLength,
-          selectedServices: selectedServicesStr
-        }).toString();
-        
-        window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-      }
+      // Replace with your actual payment URL
+      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
     } catch (error) {
       console.error('Error:', error);
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
       setIsLoading(false);
     }
   }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
-
-  // Handle product selection with auto-scroll
-  const handleProductSelect = useCallback((product) => {
-    setCurrentlyOpenService(product);
-    setCurrentStep(3); // Move to step 3: Tier selection
-    
-    // Scroll to tiers section after a short delay
-    setTimeout(() => {
-      tiersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-  }, []);
-
-  // Load saved bundle on mount with improved error handling
+  
+  // Load saved bundle on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("buzzwordBundle");
@@ -890,11 +1058,9 @@ const BundleBuilder = () => {
         setBundleName(parsedData.bundleName || "");
         setSelectedBusiness(parsedData.selectedBusiness || "");
         
-        // Load bundleID if available
         if (parsedData.bundleID) {
           setBundleID(parsedData.bundleID);
         } else {
-          // If no bundleID in saved data, create a new one
           const newBundleID = `bwb-${uuidv4()}`;
           setBundleID(newBundleID);
         }
@@ -902,7 +1068,6 @@ const BundleBuilder = () => {
         const firstService = Object.keys(parsedData.selectedTiers || {}).find(service => products.includes(service)) || products[0];
         setCurrentlyOpenService(firstService);
         
-        // Set current step based on saved data
         if (parsedData.selectedBusiness) {
           setCurrentStep(2);
           if (Object.keys(parsedData.selectedTiers || {}).length > 0) {
@@ -910,31 +1075,26 @@ const BundleBuilder = () => {
           }
         }
       } else {
-        // If no saved data, create a new bundleID
         const newBundleID = `bwb-${uuidv4()}`;
         setBundleID(newBundleID);
       }
       
-      // Mark initial load as complete after a short delay
       setTimeout(() => {
         setInitialLoadComplete(true);
       }, 1000);
     } catch (e) {
       console.error("Error loading saved bundle:", e);
-      
-      // Create a new bundleID even if there's an error
       const newBundleID = `bwb-${uuidv4()}`;
       setBundleID(newBundleID);
       setInitialLoadComplete(true);
     }
   }, []);
-
-  // Save bundle data with improved error handling
+  
+  // Save bundle data
   useEffect(() => {
-    if (!bundleID || !initialLoadComplete) return; // Skip if bundleID is not set yet or initial load isn't complete
+    if (!bundleID || !initialLoadComplete) return;
     
     try {
-      // Create bundle data object for localStorage
       const bundleData = {
         bundleID,
         selectedTiers,
@@ -944,215 +1104,23 @@ const BundleBuilder = () => {
         finalMonthly: parseFloat(final.toFixed(2))
       };
       
-      // Save to localStorage
       localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
     } catch (error) {
       console.error("Error saving bundle to localStorage:", error);
     }
   }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final, initialLoadComplete]);
-
-  // Component for Performance Disclaimer Modal - extracted to improve readability
-  const PerformanceDisclaimerModal = () => {
-    if (!showPerformanceDisclaimer) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#121212] rounded-xl p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto border border-[#D28C00]/20">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Results Disclaimer</h2>
-            <button
-              onClick={() => setShowPerformanceDisclaimer(false)}
-              className="w-10 h-10 rounded-full bg-[#2A2A2A] text-white/60 hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-all flex items-center justify-center"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="space-y-4 text-white/85 text-sm">
-            <p>
-              The case studies and success stories presented on this platform represent <strong>specific client results</strong> and are shared for illustrative purposes only.
-            </p>
-            
-            <p>
-              <strong>IMPORTANT:</strong> These results are not guarantees or promises of specific outcomes. Your results may vary substantially based on numerous factors, including but not limited to:
-            </p>
-            
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Your business type, industry, and target market</li>
-              <li>Your product or service quality and pricing</li>
-              <li>Your current market position and competition</li>
-              <li>Seasonal and market trends</li>
-              <li>Platform algorithm changes (Google, Meta, etc.)</li>
-              <li>Your level of engagement with our recommendations</li>
-              <li>Your existing website quality and conversion rate</li>
-            </ul>
-            
-            <p>
-              While we strive to provide high-quality marketing services and will use commercially reasonable efforts to help you achieve your marketing goals, we cannot guarantee specific results, rankings, or returns on investment.
-            </p>
-            
-            <p>
-              Digital marketing is an ongoing process that often requires testing, optimization, and patience before achieving optimal results.
-            </p>
-          </div>
-          
-          <div className="mt-6">
-            <button
-              onClick={() => setShowPerformanceDisclaimer(false)}
-              className="w-full py-3 bg-[#D28C00] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#B77A00] transition-colors"
-            >
-              I Understand
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
   
-  // Privacy Policy Modal - extracted for better readability
-  const PrivacyPolicyModal = () => {
-    if (!showPrivacyPolicy) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#121212] rounded-xl p-6 w-full max-w-3xl max-h-[85vh] overflow-y-auto border border-[#D28C00]/20">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Privacy Policy</h2>
-            <button
-              onClick={() => setShowPrivacyPolicy(false)}
-              className="w-10 h-10 rounded-full bg-[#2A2A2A] text-white/60 hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-all flex items-center justify-center"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="space-y-4 text-sm text-white/85">
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">1. Introduction</h3>
-              <p>
-                Buzzword Strategies LLC ("we," "our," or "us") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Bundle Builder platform and marketing services.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">2. Information We Collect</h3>
-              <p>We collect several types of information from and about users of our services, including:</p>
-              <ul className="list-disc pl-6 mt-2">
-                <li><strong>Personal Information:</strong> Name, email address, phone number, postal address, company name, website URL, and payment information.</li>
-                <li><strong>Usage Data:</strong> Information about how you interact with our services, including pages visited, time spent, and actions taken.</li>
-                <li><strong>Marketing Preferences:</strong> Your consent choices regarding marketing communications.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">3. How We Use Your Information</h3>
-              <ul className="list-disc pl-6">
-                <li>To provide and maintain our services</li>
-                <li>To process transactions and manage your account</li>
-                <li>To fulfill our service obligations and deliver marketing services</li>
-                <li>To contact you regarding your account, services, or changes to policies</li>
-                <li>To improve our website and services</li>
-                <li>To send promotional materials and newsletters (with your consent)</li>
-                <li>To comply with legal obligations</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">4. Disclosure of Your Information</h3>
-              <p>We may disclose your personal information to:</p>
-              <ul className="list-disc pl-6 mt-2">
-                <li><strong>Service Providers:</strong> Third parties that help us operate our business and deliver services (e.g., payment processors, cloud storage providers)</li>
-                <li><strong>Marketing Platforms:</strong> When necessary to deliver the contracted marketing services (e.g., Google, Meta, TikTok)</li>
-                <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-              </ul>
-              <p className="mt-2">We do not sell your personal information to third parties.</p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">5. Data Storage and Security</h3>
-              <p>
-                We use Supabase and Stripe to store and process your information securely. We implement appropriate technical and organizational measures to protect your personal information from unauthorized access, disclosure, or destruction.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">6. Your Rights</h3>
-              <p>Depending on your location, you may have rights regarding your personal information, including:</p>
-              <ul className="list-disc pl-6 mt-2">
-                <li>Right to access personal information we hold about you</li>
-                <li>Right to correct inaccurate information</li>
-                <li>Right to request deletion of your information</li>
-                <li>Right to restrict or object to processing</li>
-                <li>Right to data portability</li>
-                <li>Right to withdraw consent (where processing is based on consent)</li>
-              </ul>
-              <p className="mt-2">
-                California residents have additional rights under the California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA).
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">7. Third-Party Links and Services</h3>
-              <p>
-                Our services may contain links to third-party websites or services. We are not responsible for the privacy practices of these third parties. We encourage you to review the privacy policies of any third-party sites you visit.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">8. Changes to This Privacy Policy</h3>
-              <p>
-                We may update this Privacy Policy from time to time. The updated version will be indicated by an updated "Last Updated" date. We encourage you to review this Privacy Policy periodically.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-2 text-[#D28C00]">9. Contact Us</h3>
-              <p>
-                If you have questions about this Privacy Policy or our privacy practices, please contact us at:
-                <br />
-                <br />
-                Buzzword Strategies LLC<br />
-                1603 Capitol Ave Ste 415 #465784<br />
-                Cheyenne, WY 82001<br />
-                Email: privacy@buzzwordstrategies.com
-              </p>
-            </section>
-          </div>
-          
-          <div className="mt-6">
-            <button
-              onClick={() => setShowPrivacyPolicy(false)}
-              className="w-full py-3 bg-[#D28C00] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#B77A00] transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
-  // Subscription Terms Disclosure Component - extracted for better readability
+  // Subscription Terms Disclosure Component
   const SubscriptionDisclosure = () => {
     return (
-      <div className="p-4 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg mb-4 text-sm">
-        <h4 className="font-medium text-[#D28C00] mb-2">Subscription Terms</h4>
-        <div className="text-white space-y-2">
+      <div className={`p-4 ${currentTheme.cardBg} ${currentTheme.border} border rounded-lg mb-4`}>
+        <h4 className={`font-medium ${currentTheme.accentText} mb-2`}>Subscription Terms</h4>
+        <div className={`${currentTheme.textSecondary} space-y-2 text-sm`}>
           <p>
-            <strong>Initial Commitment:</strong> By approving this bundle, you agree to an initial commitment of {subLength} months at ${final.toFixed(2)}/month.
+            <strong className={currentTheme.text}>Initial Commitment:</strong> By approving this bundle, you agree to an initial commitment of {subLength} months at ${final.toFixed(2)}/month.
           </p>
           <p>
-            <strong>Automatic Renewal:</strong> After the initial period, your subscription will automatically renew monthly until canceled. You'll receive renewal notifications by email.
-          </p>
-          <p>
-            <strong>Cancellation:</strong> You may cancel at any time after the initial commitment period with no penalty. Early cancellation during the initial period incurs a fee equal to 50% of remaining payments.
-          </p>
-          <p>
-            <strong>Billing:</strong> Your payment method will be charged automatically on the same day each month.
+            <strong className={currentTheme.text}>Automatic Renewal:</strong> After the initial period, your subscription will automatically renew monthly until canceled.
           </p>
         </div>
         <div className="mt-3 flex items-start">
@@ -1161,10 +1129,10 @@ const BundleBuilder = () => {
             id="termsAcknowledgment"
             checked={subscriptionAcknowledged}
             onChange={() => setSubscriptionAcknowledged(!subscriptionAcknowledged)}
-            className="mt-1 w-4 h-4 text-[#D28C00] bg-[#2A2A2A] border-[#D28C00]/20 rounded focus:ring-[#D28C00]/50"
+            className={`mt-1 w-4 h-4 ${currentTheme.accentText} ${currentTheme.bg} ${currentTheme.border} rounded focus:ring-2 focus:ring-offset-2 ${isDarkMode ? 'focus:ring-[#D28C00]' : 'focus:ring-purple-600'}`}
           />
-          <label htmlFor="termsAcknowledgment" className="ml-2 text-white/85">
-            I understand this is a subscription with an initial {subLength}-month commitment that will automatically renew monthly thereafter until canceled.
+          <label htmlFor="termsAcknowledgment" className={`ml-2 ${currentTheme.textSecondary} text-sm`}>
+            I understand this is a subscription with an initial {subLength}-month commitment.
           </label>
         </div>
       </div>
@@ -1172,85 +1140,162 @@ const BundleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1A1A1A] text-white">
-      {/* Performance Disclaimer Modal */}
-      <PerformanceDisclaimerModal />
+    <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} relative`}>
+      {/* Subtle animated background */}
+      <AnimatedBackground isDarkMode={isDarkMode} />
       
-      {/* Privacy Policy Modal */}
-      <PrivacyPolicyModal />
+      {/* Chatbot Widget */}
+      <ChatbotWidget 
+        isDarkMode={isDarkMode}
+        bundleData={{
+          bundleID,
+          selectedTiers,
+          subLength,
+          bundleName,
+          selectedBusiness,
+          finalMonthly: final,
+          totalSaved
+        }}
+        onUpdateBundle={handleChatbotBundleUpdate}
+      />
       
       {/* Header */}
-      <div className="bg-gradient-to-b from-[#1A1A1A] to-[#121212] py-6 px-4 border-b border-[#D28C00]/20">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col items-center gap-6">
+      <div className={`${currentTheme.bgSecondary} border-b ${currentTheme.border} relative z-10`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between px-4 py-3">
             <a href="https://www.buzzwordstrategies.com" className="cursor-pointer">
               <img 
                 src="https://images.squarespace-cdn.com/content/v1/673fc8d414047c5c20a42e65/ab4663d3-4840-47f0-88cf-a5b1144ed31a/Remove+background+project+%281%29.png?format=1000w"
                 alt="Buzzword Strategies" 
-                className="h-14 w-auto hover:opacity-90 transition-opacity"
+                className="h-8 md:h-10 w-auto"
               />
             </a>
             
-            {/* Step indicator */}
-            <div className="w-full max-w-2xl">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-[#D28C00] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-white/50'} font-bold`}>1</div>
-                  <div className={`ml-2 text-sm font-medium ${currentStep >= 1 ? 'text-[#D28C00]' : 'text-white/50'}`}>Select Industry</div>
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-2 rounded-lg ${currentTheme.cardBg} ${currentTheme.border} border transition-colors`}
+              aria-label="Toggle theme"
+            >
+              {isDarkMode ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between max-w-2xl mx-auto">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex-1 flex items-center">
+                  <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                      currentStep >= step 
+                        ? `${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'}` 
+                        : `${currentTheme.cardBg} ${currentTheme.textSecondary} ${currentTheme.border} border`
+                    }`}>
+                      {step}
+                    </div>
+                    <span className={`ml-2 text-xs md:text-sm ${currentStep >= step ? currentTheme.text : currentTheme.textSecondary} hidden md:block`}>
+                      {step === 1 ? 'Industry' : step === 2 ? 'Services' : 'Tiers'}
+                    </span>
+                  </div>
+                  {step < 3 && (
+                    <div className={`flex-1 mx-2 h-0.5 ${currentStep > step ? currentTheme.accent : currentTheme.cardBg}`}></div>
+                  )}
                 </div>
-                <div className={`flex-1 mx-2 h-1 ${currentStep >= 2 ? 'bg-[#D28C00]' : 'bg-[#2A2A2A]'}`}></div>
-                <div className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-[#D28C00] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-white/50'} font-bold`}>2</div>
-                  <div className={`ml-2 text-sm font-medium ${currentStep >= 2 ? 'text-[#D28C00]' : 'text-white/50'}`}>Choose Services</div>
-                </div>
-                <div className={`flex-1 mx-2 h-1 ${currentStep >= 3 ? 'bg-[#D28C00]' : 'bg-[#2A2A2A]'}`}></div>
-                <div className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-[#D28C00] text-[#1A1A1A]' : 'bg-[#2A2A2A] text-white/50'} font-bold`}>3</div>
-                  <div className={`ml-2 text-sm font-medium ${currentStep >= 3 ? 'text-[#D28C00]' : 'text-white/50'}`}>Select Tiers</div>
-                </div>
-              </div>
+              ))}
             </div>
-            
-            {/* Business Selector */}
-            <div className="flex flex-col items-center gap-3 w-full">
-              <span className="text-sm text-[#D28C00]/70 uppercase tracking-wider">Step 1: Select Your Industry</span>
-              <div className="flex flex-wrap gap-3 justify-center px-2">
+          </div>
+          
+          {/* Business Selector */}
+          <div className={`px-4 pb-4 ${currentTheme.bgTertiary} ${currentTheme.border} border-t`}>
+            <div className="max-w-4xl mx-auto">
+              <h2 className={`text-sm font-medium ${currentTheme.textSecondary} mb-3 text-center`}>Select Your Industry</h2>
+              <div className="flex flex-wrap gap-2 justify-center">
                 {businessTypes.map(type => (
                   <button
                     key={type}
                     onClick={() => {
                       setSelectedBusiness(type);
-                      setCurrentStep(2); // Move to step 2 after selection
+                      setCurrentStep(2);
                       
-                      // Save data after update
                       if (initialLoadComplete) {
                         debouncedSave(0);
                       }
                       
-                      // Scroll to products section after a short delay
                       setTimeout(() => {
-                        productsSectionRef.current?.scrollIntoView({ 
-                          behavior: 'smooth', 
-                          block: 'start' 
-                        });
+                        if (productsSectionRef.current) {
+                          const yOffset = -80;
+                          const y = productsSectionRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                          window.scrollTo({ top: y, behavior: 'smooth' });
+                        }
                       }, 300);
                     }}
-                    className={`px-6 py-3 text-sm rounded-lg transition-all duration-300 ${
+                    className={`px-4 py-2 text-sm rounded-lg transition-all ${
                       selectedBusiness === type
-                        ? 'bg-[#D28C00] text-[#1A1A1A] font-medium shadow-lg shadow-[#D28C00]/20'
-                        : 'bg-[#2A2A2A] text-white hover:bg-[#2A2A2A]/80 border border-gray-700'
+                        ? `${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium`
+                        : `${currentTheme.cardBg} ${currentTheme.text} ${currentTheme.border} border ${currentTheme.accentHover}`
                     }`}
                   >
                     {type}
                   </button>
                 ))}
               </div>
-              {selectedBusiness && (
-                <div className="flex items-center mt-2 animate-pulse">
-                  <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  <span className="text-sm text-white">Scroll down to select your services</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Header */}
+      <div className={`sticky top-0 z-40 ${currentTheme.bg} ${currentTheme.border} border-b backdrop-blur-sm bg-opacity-95`}>
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center justify-between">
+            {/* Subscription Length */}
+            <div className="flex-1 max-w-xs md:max-w-md">
+              <div className="flex justify-between items-center mb-1">
+                <span className={`text-xs ${currentTheme.textSecondary}`}>Length</span>
+                <span className={`text-xs font-medium ${currentTheme.green}`}>
+                  {subscriptionDiscount}% off
+                </span>
+              </div>
+              <input
+                type="range"
+                min="3"
+                max="24"
+                step="3"
+                value={subLength}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value);
+                  setSubLength(newValue);
+                  
+                  if (initialLoadComplete) {
+                    debouncedSave(0);
+                  }
+                }}
+                className={`w-full h-1.5 rounded-full appearance-none cursor-pointer ${currentTheme.bgTertiary}`}
+                style={{
+                  background: `linear-gradient(to right, ${isDarkMode ? '#D28C00' : '#9333EA'} 0%, ${isDarkMode ? '#D28C00' : '#9333EA'} ${(subLength - 3) / 21 * 100}%, ${isDarkMode ? '#1A1A1A' : '#E5E7EB'} ${(subLength - 3) / 21 * 100}%, ${isDarkMode ? '#1A1A1A' : '#E5E7EB'} 100%)`
+                }}
+              />
+              <div className={`text-xs ${currentTheme.textSecondary} mt-1 text-center`}>{subLength} months</div>
+            </div>
+
+            {/* Price Display */}
+            <div className="text-right ml-4">
+              <div className={`text-2xl md:text-3xl font-semibold ${currentTheme.text}`}>
+                ${final.toFixed(0)}
+                <span className={`text-base ${currentTheme.textSecondary} font-normal`}>/mo</span>
+              </div>
+              {totalSaved > 0 && (
+                <div className={`text-xs ${currentTheme.green}`}>
+                  Save ${totalSaved.toFixed(0)}/mo
                 </div>
               )}
             </div>
@@ -1258,119 +1303,33 @@ const BundleBuilder = () => {
         </div>
       </div>
 
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-[#D28C00]/10">
-        <div className="max-w-6xl mx-auto">
-          {/* Total Discount Progress Bar */}
-          <div className="bg-[#121212]/50 py-4 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-white/70">Total Savings</span>
-                <span className="text-sm font-semibold text-[#D28C00]">
-                  {totalDiscountPercentage.toFixed(1)}% Discount
-                </span>
-              </div>
-              <div className="relative w-full h-3 bg-[#2A2A2A] rounded-full overflow-hidden">
-                <div 
-                  className="absolute h-full bg-gradient-to-r from-[#D28C00] to-[#EDC56A] rounded-full transition-all duration-500"
-                  style={{ width: `${(totalDiscountPercentage / maxDiscount) * 100}%` }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-white">
-                    {totalDiscountPercentage < maxDiscount ? 
-                      `${(maxDiscount - totalDiscountPercentage).toFixed(1)}% until maximum savings` :
-                      'Maximum savings reached!'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Main Header */}
-          <div className="px-4 py-4">
-            <div className="flex items-start justify-between gap-8">
-              {/* Subscription Term */}
-              <div className="flex-1 max-w-lg">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-medium text-white/70">Subscription Length</span>
-                  <span className="text-sm font-semibold text-[#D28C00]">
-                    {subLength} Months · {subscriptionDiscount}% Off
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="3"
-                  max="24"
-                  step="3"
-                  value={subLength}
-                  onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
-                    setSubLength(newValue);
-                    
-                    // Save data after update
-                    if (initialLoadComplete) {
-                      debouncedSave(0);
-                    }
-                  }}
-                  className="w-full h-2 bg-[#2A2A2A] rounded-full appearance-none cursor-pointer accent-[#D28C00]"
-                  style={{
-                    background: `linear-gradient(to right, #D28C00 0%, #D28C00 ${(subLength - 3) / 21 * 100}%, #2A2A2A ${(subLength - 3) / 21 * 100}%, #2A2A2A 100%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs text-white/50 mt-2">
-                  <span>3</span>
-                  <span>12</span>
-                  <span>24</span>
-                </div>
-              </div>
-
-              {/* Price Display */}
-              <div className="text-right">
-                <div className="text-4xl font-bold text-white mb-1">${final.toFixed(2)}</div>
-                <div className="text-sm text-[#D28C00]/70 mb-3">Per Month</div>
-                {selected.length > 0 && (
-                  <button
-                    onClick={() => {
-                      setShowPurchaseModal(true);
-                      pricingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="px-6 py-3 bg-[#D28C00] hover:bg-[#B77A00] text-[#1A1A1A] font-semibold rounded-lg transition-all duration-300 flex items-center"
-                  >
-                    <span>Continue to Purchase</span>
-                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Selected Services */}
+      <div className="max-w-7xl mx-auto px-4 py-6 relative z-10">
+        {/* Selected Services Summary */}
         {selected.length > 0 && (
-          <div className="mb-10" ref={pricingSectionRef}>
-            <h3 className="text-sm font-medium text-[#D28C00]/70 uppercase tracking-wider mb-4">Your Selected Services</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="mb-6" ref={pricingSectionRef}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-medium ${currentTheme.textSecondary}`}>Selected Services</h3>
+              <button
+                onClick={() => setShowPurchaseModal(true)}
+                className={`px-4 py-2 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} text-sm font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
+              >
+                Continue to Purchase
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {selected.map(([product, tier]) => (
-                <div key={product} className="flex items-center justify-between px-4 py-3 bg-[#2A2A2A] text-white rounded-lg border border-[#D28C00]/20">
+                <div key={product} className={`flex items-center justify-between p-3 ${currentTheme.cardBg} rounded-lg ${currentTheme.border} border`}>
                   <div className="flex items-center">
-                    <span className="font-medium">{product} – {tier}</span>
-                    <div 
-                      className="ml-2 w-5 h-5 rounded-full bg-[#121212] text-[#D28C00] flex items-center justify-center cursor-pointer hover:bg-[#D28C00] hover:text-[#121212] transition-colors"
-                      onClick={() => openServiceInfoModal(product)}
-                    >
-                      <span className="text-xs font-bold">i</span>
-                    </div>
+                    <ServiceIcon service={product} className="w-5 h-5 mr-3" />
+                    <span className="text-sm font-medium">{product}</span>
+                    <span className={`ml-2 text-sm ${currentTheme.textSecondary}`}>{tier}</span>
                   </div>
                   <button
                     onClick={() => handleTierSelect(product, null)}
-                    className="text-white/60 hover:text-red-500 transition-colors ml-4"
+                    className={`${currentTheme.textSecondary} hover:${currentTheme.red} transition-colors`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -1381,96 +1340,70 @@ const BundleBuilder = () => {
         )}
 
         {/* Service Selection */}
-        <div className="mb-12" ref={productsSectionRef}>
-          <h3 className="text-sm font-medium text-[#D28C00]/70 uppercase tracking-wider mb-4">Step 2: Select Services</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mb-8" ref={productsSectionRef}>
+          <h3 className={`text-sm font-medium ${currentTheme.textSecondary} mb-4`}>Select Services</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {products.map(service => (
-              <div 
-                key={service} 
-                className={`relative p-4 rounded-lg transition-all duration-300 cursor-pointer ${
-                  service === currentlyOpenService 
-                    ? 'bg-[#D28C00] text-[#1A1A1A] shadow-lg shadow-[#D28C00]/20' 
-                    : selectedTiers[service] 
-                      ? 'bg-[#2A2A2A] text-white border border-[#D28C00]/30'
-                      : 'bg-[#2A2A2A] text-white/70 hover:bg-[#2A2A2A]/80 border border-gray-700 hover:border-[#D28C00]/30'
-                }`}
+              <button
+                key={service}
                 onClick={() => handleProductSelect(service)}
+                className={`p-4 rounded-lg transition-all ${
+                  service === currentlyOpenService 
+                    ? `${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} shadow-lg`
+                    : selectedTiers[service]
+                      ? `${currentTheme.cardBg} ${currentTheme.borderAccent} border-2`
+                      : `${currentTheme.cardBg} ${currentTheme.border} border hover:${currentTheme.borderAccent}`
+                }`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-medium">{service}</span>
-                  <div 
-                    className={`w-5 h-5 rounded-full ${
-                      service === currentlyOpenService 
-                        ? 'bg-[#1A1A1A] text-[#D28C00]' 
-                        : 'bg-[#121212] text-white/70'
-                    } flex items-center justify-center cursor-pointer hover:bg-[#D28C00] hover:text-[#121212] transition-colors`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openServiceInfoModal(service);
-                    }}
-                  >
-                    <span className="text-xs font-bold">i</span>
-                  </div>
-                </div>
-                <p className="text-xs opacity-80 mb-2">{serviceDescriptions[service].split('.')[0]}.</p>
+                <ServiceIcon 
+                  service={service} 
+                  className={`w-8 h-8 mx-auto mb-2 ${
+                    service === currentlyOpenService 
+                      ? isDarkMode ? 'text-black' : 'text-white'
+                      : ''
+                  }`} 
+                />
+                <h4 className="font-medium text-sm">{service}</h4>
+                <p className={`text-xs mt-1 ${
+                  service === currentlyOpenService 
+                    ? isDarkMode ? 'text-black/70' : 'text-white/70'
+                    : currentTheme.textSecondary
+                }`}>
+                  From ${Math.min(...Object.values(pricing[service]))}
+                </p>
                 {selectedTiers[service] && (
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-[#D28C00] rounded-full flex items-center justify-center text-[#1A1A1A] text-xs font-bold">
-                    ✓
+                  <span className={`inline-block mt-2 text-xs font-medium ${currentTheme.green}`}>
+                    ✓ {selectedTiers[service]}
                   </span>
                 )}
-                <div className="mt-2 text-xs">
-                  <span className={`${
-                    service === currentlyOpenService 
-                      ? 'text-[#1A1A1A]/70' 
-                      : 'text-[#D28C00]'
-                  }`}>
-                    From ${Math.min(...Object.values(pricing[service]))} /month
-                  </span>
-                </div>
-              </div>
+              </button>
             ))}
           </div>
-          <div className="flex items-center mt-4 justify-center">
-            <button 
-              onClick={() => setShowPerformanceDisclaimer(true)}
-              className="text-xs text-[#D28C00] underline mt-1"
-            >
-              View Results Disclaimer
-            </button>
-          </div>
-          {selectedBusiness && currentlyOpenService && (
-            <div className="flex items-center mt-4 justify-center animate-pulse">
-              <svg className="w-5 h-5 text-[#D28C00] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              <span className="text-sm text-white">Scroll down to select your tier</span>
-            </div>
-          )}
         </div>
 
         {/* Tier Selection */}
         {currentlyOpenService && (
           <div ref={tiersSectionRef}>
-            <h3 className="text-sm font-medium text-[#D28C00]/70 uppercase tracking-wider mb-4">
-              Step 3: Choose {currentlyOpenService} Tier
+            <h3 className={`text-sm font-medium ${currentTheme.textSecondary} mb-4`}>
+              Choose {currentlyOpenService} Tier
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {["Base", "Standard", "Premium"].map(tier => (
                 <div
                   key={tier}
                   onClick={() => handleTierSelect(currentlyOpenService, tier)}
-                  className={`p-6 rounded-lg cursor-pointer transition-all duration-300 ${
+                  className={`p-6 rounded-lg cursor-pointer transition-all ${
                     selectedTiers[currentlyOpenService] === tier 
-                      ? 'bg-[#2A2A2A] border-2 border-[#D28C00] shadow-lg shadow-[#D28C00]/10' 
-                      : 'bg-[#2A2A2A] border border-gray-700 hover:border-[#D28C00]/30'
+                      ? `${currentTheme.cardBg} ${currentTheme.borderAccent} border-2 shadow-lg`
+                      : `${currentTheme.cardBg} ${currentTheme.border} border hover:${currentTheme.borderAccent}`
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h4 className="font-bold text-xl text-white mb-1">{tier}</h4>
-                      <div className="text-3xl font-bold text-[#D28C00]">
+                      <h4 className="font-semibold text-lg">{tier}</h4>
+                      <div className={`text-2xl font-bold ${currentTheme.text} mt-1`}>
                         ${pricing[currentlyOpenService][tier]}
-                        <span className="text-sm text-white/60 font-normal">/month</span>
+                        <span className={`text-sm ${currentTheme.textSecondary} font-normal`}>/mo</span>
                       </div>
                     </div>
                     <button
@@ -1478,157 +1411,109 @@ const BundleBuilder = () => {
                         e.stopPropagation();
                         openTierDetailsModal(currentlyOpenService, tier);
                       }}
-                      className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white/60 hover:bg-[#121212] hover:text-[#D28C00] transition-all flex items-center justify-center"
+                      className={`${currentTheme.textSecondary} hover:${currentTheme.text} transition-colors`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </button>
                   </div>
-                  <p className="text-sm text-white/80 leading-relaxed">
+                  <p className={`text-sm ${currentTheme.textSecondary} leading-relaxed`}>
                     {getBestForText(currentlyOpenService, tier)}
                   </p>
-                  
-                  {/* Feature highlights preview */}
-                  <div className="mt-4 pt-4 border-t border-[#D28C00]/10">
-                    <h5 className="text-xs font-medium text-[#D28C00]/70 mb-2">Feature Highlights:</h5>
-                    <ul className="space-y-1">
-                      {detailedFeatures[currentlyOpenService]?.[tier]?.features?.slice(0, 2).map((feature, idx) => (
-                        <li key={idx} className="text-xs text-white/70">{feature}</li>
-                      ))}
-                      {detailedFeatures[currentlyOpenService]?.[tier]?.features?.length > 2 && (
-                        <li className="text-xs text-[#D28C00]">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openTierDetailsModal(currentlyOpenService, tier);
-                            }}
-                            className="underline hover:no-underline"
-                          >
-                            See all features
-                          </button>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                  
-                  {/* Selected indicator */}
                   {selectedTiers[currentlyOpenService] === tier && (
-                    <div className="absolute top-4 right-4">
-                      <div className="w-6 h-6 rounded-full bg-[#D28C00] flex items-center justify-center text-[#1A1A1A] text-xs font-bold">
-                        ✓
-                      </div>
+                    <div className={`mt-3 flex items-center ${currentTheme.green} text-sm font-medium`}>
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Selected
                     </div>
                   )}
                 </div>
               ))}
             </div>
-            
-            {/* Action button */}
-            {selectedTiers[currentlyOpenService] && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={() => {
-                    productsSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                    setTimeout(() => setCurrentStep(2), 500);
-                  }}
-                  className="px-6 py-3 bg-[#2A2A2A] hover:bg-[#1A1A1A] text-white font-semibold rounded-lg transition-all duration-300"
-                >
-                  Select Another Service
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
 
       {/* Purchase Modal */}
       {showPurchaseModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121212] rounded-xl p-8 w-full max-w-md md:max-w-2xl border border-[#D28C00]/20 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${currentTheme.cardBg} rounded-xl p-6 w-full max-w-md ${currentTheme.border} border`}>
             {formStep === 0 ? (
-              // Step 1: Bundle Confirmation
               <>
-                <h2 className="text-2xl font-bold text-white mb-6">Finalize Your Bundle</h2>
+                <h2 className={`text-xl font-semibold mb-4 ${currentTheme.text}`}>Finalize Your Bundle</h2>
+                
                 <input
                   type="text"
                   placeholder="Bundle Name (Optional)"
                   value={bundleName}
                   onChange={(e) => {
                     setBundleName(e.target.value);
-                    
-                    // Debounce save for bundle name
                     if (initialLoadComplete) {
                       debouncedSave(0);
                     }
                   }}
-                  className="w-full p-4 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg mb-6 text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors"
+                  className={`w-full p-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg mb-4 ${currentTheme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'}`}
                 />
                 
-                <div className="p-4 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg mb-6">
-                  <h3 className="font-medium text-[#D28C00] mb-3">Selected Services</h3>
-                  <ul className="space-y-2">
+                <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg mb-4`}>
+                  <h3 className={`font-medium mb-3 ${currentTheme.text}`}>Order Summary</h3>
+                  <div className="space-y-2">
                     {selected.map(([product, tier]) => (
-                      <li key={product} className="flex justify-between items-center">
-                        <span className="text-white">{product}</span>
-                        <span className="text-white/70">{tier}</span>
-                      </li>
+                      <div key={product} className={`flex justify-between text-sm ${currentTheme.text}`}>
+                        <span>{product} - {tier}</span>
+                        <span>${pricing[product][tier]}</span>
+                      </div>
                     ))}
-                  </ul>
-                  <div className="mt-4 pt-3 border-t border-[#D28C00]/10">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/70">Subscription Length</span>
-                      <span className="text-white">{subLength} months</span>
+                  </div>
+                  <div className={`mt-3 pt-3 border-t ${currentTheme.border}`}>
+                    <div className={`flex justify-between text-sm ${currentTheme.text}`}>
+                      <span>Subscription ({subLength} months)</span>
+                      <span className={currentTheme.green}>-{subscriptionDiscount}%</span>
+                    </div>
+                    {bundleDiscount > 0 && (
+                      <div className={`flex justify-between text-sm ${currentTheme.text}`}>
+                        <span>Bundle discount</span>
+                        <span className={currentTheme.green}>-{bundleDiscount}%</span>
+                      </div>
+                    )}
+                    <div className={`flex justify-between font-semibold mt-2 text-lg ${currentTheme.text}`}>
+                      <span>Total</span>
+                      <span>${final.toFixed(2)}/mo</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="text-center mb-8">
-                  <div className="text-4xl font-bold text-[#D28C00] mb-2">${final.toFixed(2)}/month</div>
-                  <div className="text-sm text-white/70">Total monthly savings: ${totalSaved.toFixed(2)}</div>
-                </div>
-                
-                {/* Subscription Terms Disclosure */}
                 <SubscriptionDisclosure />
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="flex gap-3">
                   <button
                     onClick={handleBundleReject}
-                    className="py-3 bg-[#2A2A2A] text-white/70 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
+                    className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
                   >
-                    Reject Bundle
+                    Cancel
                   </button>
                   <button
                     onClick={handleBundleConfirm}
-                    className="py-3 bg-[#D28C00] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#B77A00] transition-colors"
+                    className={`flex-1 py-3 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
                   >
-                    Approve Bundle
-                  </button>
-                </div>
-                
-                <div className="mt-4 text-center">
-                  <button 
-                    onClick={() => setShowPrivacyPolicy(true)}
-                    className="text-xs text-[#D28C00] underline"
-                  >
-                    View Privacy Policy
+                    Continue
                   </button>
                 </div>
               </>
             ) : formStep === 1 ? (
-              // Step 2: User Information Form
               <UserInfoForm 
                 onSubmit={handleUserInfoSubmit} 
                 onCancel={() => setFormStep(0)}
                 setShowPrivacyPolicy={setShowPrivacyPolicy}
               />
             ) : (
-              // Step 3: Contract Agreement
               <>
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-16 h-16 border-4 border-[#D28C00] border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-white text-lg">Processing your agreement...</p>
+                    <div className={`w-12 h-12 border-4 ${currentTheme.borderAccent} border-t-transparent rounded-full animate-spin mb-4`}></div>
+                    <p className={currentTheme.text}>Processing your agreement...</p>
                   </div>
                 ) : (
                   <ContractAgreementForm 
@@ -1653,58 +1538,55 @@ const BundleBuilder = () => {
 
       {/* Feature Details Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121212] rounded-xl p-6 w-full max-w-3xl max-h-[85vh] overflow-y-auto border border-[#D28C00]/20">
-            <div className="flex justify-between items-center mb-6 border-b border-[#D28C00]/10 pb-4">
-              <h2 className="text-2xl font-bold text-white">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${currentTheme.cardBg} rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto ${currentTheme.border} border`}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className={`text-xl font-semibold ${currentTheme.text}`}>
                 {modalService} – {modalTier} Tier
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-10 h-10 rounded-full bg-[#2A2A2A] text-white/60 hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-all flex items-center justify-center"
+                className={`${currentTheme.textSecondary} hover:${currentTheme.text} transition-colors`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             
-            {/* Disclaimer for Ad Services */}
             {detailedFeatures[modalService]?.[modalTier]?.disclaimer && (
-              <div className="mb-6 p-4 bg-[#D28C00]/10 border border-[#D28C00]/20 rounded-lg">
-                <p className="text-sm text-white/80 mb-3">
+              <div className={`mb-4 p-3 ${currentTheme.bgTertiary} rounded-lg`}>
+                <p className={`text-sm ${currentTheme.textSecondary} mb-2`}>
                   {detailedFeatures[modalService][modalTier].disclaimer}
                 </p>
-                <p className="text-sm text-[#D28C00] font-medium">
+                <p className={`text-sm font-medium ${currentTheme.accentText}`}>
                   {detailedFeatures[modalService][modalTier].budget}
                 </p>
               </div>
             )}
             
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#D28C00]/90 mb-4">
-                Included Features
-              </h3>
+            <div className="space-y-2">
+              <h3 className={`font-medium ${currentTheme.text} mb-3`}>Included Features</h3>
               {detailedFeatures[modalService]?.[modalTier]?.features?.map((feature, index) => (
-                <div key={index} className="text-white/80 text-sm pl-6">
+                <div key={index} className={`text-sm ${currentTheme.textSecondary}`}>
                   {feature}
                 </div>
               ))}
             </div>
             
-            <div className="flex gap-4 mt-8">
+            <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
                   setShowModal(false);
                   handleTierSelect(modalService, modalTier);
                 }}
-                className="flex-1 py-3 bg-[#D28C00] text-[#1A1A1A] font-medium rounded-lg hover:bg-[#B77A00] transition-colors"
+                className={`flex-1 py-3 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
               >
                 Select This Tier
               </button>
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-3 bg-[#2A2A2A] text-white font-medium rounded-lg hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-colors"
+                className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
               >
                 Close
               </button>
@@ -1715,64 +1597,47 @@ const BundleBuilder = () => {
       
       {/* Service Info Modal */}
       {showServiceInfoModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121212] rounded-xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-[#D28C00]/20">
-            <div className="flex justify-between items-center mb-6 border-b border-[#D28C00]/10 pb-4">
-              <h2 className="text-2xl font-bold text-white">
-                {serviceInfoContent.title}
-              </h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`${currentTheme.cardBg} rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto ${currentTheme.border} border`}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className={`text-xl font-semibold ${currentTheme.text}`}>{serviceInfoContent.title}</h2>
               <button
                 onClick={() => setShowServiceInfoModal(false)}
-                className="w-10 h-10 rounded-full bg-[#2A2A2A] text-white/60 hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-all flex items-center justify-center"
+                className={`${currentTheme.textSecondary} hover:${currentTheme.text} transition-colors`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-[#D28C00]/90 mb-3">
-                What is {serviceInfoContent.title}?
-              </h3>
-              <p className="text-white/80 text-sm mb-4">
+            <div className="mb-4">
+              <h3 className={`font-medium ${currentTheme.text} mb-2`}>What is {serviceInfoContent.title}?</h3>
+              <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>
                 {serviceInfoContent.description}
               </p>
               
-              <div className="mt-6 p-4 bg-[#D28C00]/10 border border-[#D28C00]/20 rounded-lg">
-                <h3 className="text-sm font-semibold text-[#D28C00] mb-2">
-                  Success Story
-                </h3>
-                <p className="text-white/80 text-sm italic">
+              <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg`}>
+                <h3 className={`text-sm font-medium ${currentTheme.accentText} mb-2`}>Success Story</h3>
+                <p className={`text-sm ${currentTheme.textSecondary} italic`}>
                   "{serviceInfoContent.successStory}"
                 </p>
-                <div className="mt-2">
-                  <button 
-                    onClick={() => {
-                      setShowServiceInfoModal(false);
-                      setShowPerformanceDisclaimer(true);
-                    }}
-                    className="text-xs text-[#D28C00] underline"
-                  >
-                    View Results Disclaimer
-                  </button>
-                </div>
               </div>
             </div>
             
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowServiceInfoModal(false);
                   handleProductSelect(serviceInfoContent.title);
                 }}
-                className="flex-1 py-3 bg-[#D28C00] text-[#1A1A1A] font-medium rounded-lg hover:bg-[#B77A00] transition-colors"
+                className={`flex-1 py-3 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
               >
                 Select This Service
               </button>
               <button
                 onClick={() => setShowServiceInfoModal(false)}
-                className="flex-1 py-3 bg-[#2A2A2A] text-white font-medium rounded-lg hover:bg-[#1A1A1A] hover:text-[#D28C00] transition-colors"
+                className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
               >
                 Close
               </button>
@@ -1781,95 +1646,50 @@ const BundleBuilder = () => {
         </div>
       )}
 
-      {/* Bundle Rejection Notification */}
-      {bundleRejected && (
-        <div className="fixed bottom-4 right-4 bg-[#2A2A2A] border border-red-500 p-4 rounded-lg shadow-lg max-w-xs animate-fade-in">
-          <div className="flex items-start gap-3">
-            <div className="text-red-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="text-white font-medium text-sm">Bundle Rejected</h4>
-              <p className="text-white/70 text-xs mt-1">Your bundle has been rejected. You can continue building your bundle.</p>
-            </div>
-            <button 
-              onClick={() => setBundleRejected(false)}
-              className="text-white/40 hover:text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* "Back to Top" button */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-4 left-4 bg-[#D28C00] text-[#1A1A1A] rounded-full p-3 shadow-lg hover:bg-[#B77A00] transition-colors"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-        </svg>
-      </button>
-
-      {/* Luxury Professional Styles */}
+      {/* Styles */}
       <style jsx>{`
-        /* Slider styling */
+        /* Range slider styling */
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 20px;
-          height: 20px;
-          background: #D28C00;
-          border: 3px solid #FFFFFF;
+          width: 16px;
+          height: 16px;
+          background: ${isDarkMode ? '#D28C00' : '#9333EA'};
           border-radius: 50%;
           cursor: pointer;
         }
         
         input[type="range"]::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          background: #D28C00;
-          border: 3px solid #FFFFFF;
+          width: 16px;
+          height: 16px;
+          background: ${isDarkMode ? '#D28C00' : '#9333EA'};
           border-radius: 50%;
           cursor: pointer;
+          border: none;
         }
         
-        /* Professional scrollbar */
+        /* Scrollbar */
         ::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
         
         ::-webkit-scrollbar-track {
-          background: #1A1A1A;
+          background: ${isDarkMode ? '#0A0A0A' : '#F3F4F6'};
         }
         
         ::-webkit-scrollbar-thumb {
-          background: #D28C00;
-          border-radius: 4px;
+          background: ${isDarkMode ? '#D28C00' : '#9333EA'};
+          border-radius: 3px;
         }
         
-        ::-webkit-scrollbar-thumb:hover {
-          background: #B77A00;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        
+        /* Pulse animation */
         @keyframes pulse {
-          0%, 100% { opacity: 0.8; }
-          50% { opacity: 0.4; }
+          0%, 100% {
+            opacity: 0.75;
+          }
+          50% {
+            opacity: 0;
+          }
         }
         
         .animate-pulse {
