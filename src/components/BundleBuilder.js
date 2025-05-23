@@ -1710,7 +1710,9 @@ const BundleBuilder = () => {
               <button
                 onClick={() => {
                   setShowServiceInfoModal(false);
-                  setIsExpanded(true);
+                  // Trigger chatbot expansion by clicking the chat button
+                  const chatButton = document.querySelector('[aria-label="Ask Sydney"]');
+                  if (chatButton) chatButton.click();
                 }}
                 className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
               >
