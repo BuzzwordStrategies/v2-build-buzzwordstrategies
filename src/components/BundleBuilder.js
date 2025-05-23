@@ -1242,7 +1242,7 @@ const saveToSupabase = useCallback(async (step, immediate = false) => {
   }
 }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, initialLoadComplete]);
 
-// Update the handleUserInfoSubmit function:
+// Only one handleUserInfoSubmit function - this is the correct implementation
 const handleUserInfoSubmit = useCallback(async (formData) => {
   try {
     setUserInfo(formData);
@@ -1367,6 +1367,33 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     }, 300);
   }, [trackEvent]);
   
+  // Handle tier selection
+  const handleTierSelect = useCallback((service, tier) => {
+    setSelectedTiers(prev => {
+      const newTiers = { ...prev };
+      if (tier === null || newTiers[service] === tier) {
+        delete newTiers[service];
+      } else {
+        newTiers[service] = tier;
+      }
+      return newTiers;
+    });
+    
+    // Track GA4 event
+    trackEvent('tier_selected', {
+      service: service,
+      tier: tier
+    });
+  }, [trackEvent]);
+  
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce((step) => {
+      saveToSupabase(step);
+    }, 1000),
+    [saveToSupabase]
+  );
+  
   // Handle bundle updates from chatbot
   const handleChatbotBundleUpdate = useCallback((updates) => {
     if (updates.selectedBusiness) {
@@ -1440,69 +1467,6 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     setBundleRejected(true);
     setShowPurchaseModal(false);
   }, []);
-  
-  const handleUserInfoSubmit = useCallback(async (formData) => {
-    try {
-      setUserInfo(formData);
-      
-      // Track GA4 event
-      trackEvent('checkout_progress', {
-        checkout_step: 2,
-        checkout_option: 'user_info_submitted'
-      });
-      
-      await saveToSupabase(1, true);
-      setFormStep(2);
-    } catch (error) {
-      console.error('Error submitting user info:', error);
-      alert('There was an error saving your information. Please try again.');
-    }
-  }, [saveToSupabase, trackEvent]);
-  
-  const handleAgreementSubmit = useCallback(async (agreementData) => {
-    setAgreementInfo(agreementData);
-    setIsLoading(true);
-    
-    try {
-      const finalBundleID = await saveToSupabase(2, true);
-      
-      const selectedServicesStr = Object.entries(selectedTiers)
-        .filter(([, tier]) => tier)
-        .map(([product, tier]) => `${product}: ${tier}`)
-        .join(', ');
-      
-      // Track GA4 purchase event
-      trackEvent('purchase', {
-        transaction_id: finalBundleID,
-        value: final,
-        currency: 'USD',
-        items: Object.entries(selectedTiers)
-          .filter(([, tier]) => tier)
-          .map(([product, tier]) => ({
-            item_name: product,
-            item_variant: tier,
-            price: pricing[product][tier],
-            quantity: 1
-          }))
-      });
-      
-      // Create payment URL (replace with your actual implementation)
-      const queryParams = new URLSearchParams({
-        bundleID: finalBundleID,
-        bundleName: bundleName || 'My Bundle',
-        finalMonthly: final.toFixed(2),
-        subLength: subLength,
-        selectedServices: selectedServicesStr
-      }).toString();
-      
-      // Replace with your actual payment URL
-      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-    } catch (error) {
-      console.error('Error:', error);
-      alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
-      setIsLoading(false);
-    }
-  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo, trackEvent]);
   
   // Load saved bundle on mount
   useEffect(() => {
