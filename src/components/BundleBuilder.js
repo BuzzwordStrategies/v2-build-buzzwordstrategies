@@ -681,113 +681,173 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
-// Improved Chatbot Component with better visibility
-const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+// Simplified Sydney Chatbot - Purely Conversational
+const ChatbotWidget = ({ isDarkMode }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const chatbotRef = useRef(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   
   useEffect(() => {
+    // Check if script is already loaded
+    const existingScript = document.querySelector('script[src*="zapier-interfaces"]');
+    if (existingScript) {
+      setIsScriptLoaded(true);
+      return;
+    }
+    
     // Load Zapier script
     const script = document.createElement('script');
     script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
     script.type = 'module';
     script.async = true;
+    script.onload = () => setIsScriptLoaded(true);
     document.body.appendChild(script);
     
-    // Set up bundle builder integration
-    window.buzzwordBundleBuilder = {
-      currentBundle: bundleData,
-      updateBundle: (updates) => {
-        onUpdateBundle(updates);
-      },
-      getServices: () => products,
-      getPricing: () => pricing,
-      getBusinessTypes: () => businessTypes
-    };
-    
     return () => {
-      document.body.removeChild(script);
-      delete window.buzzwordBundleBuilder;
+      // Don't remove the script as it might be needed
     };
-  }, [bundleData, onUpdateBundle]);
+  }, []);
   
   const theme = {
     dark: {
       bg: 'bg-[#1A1A1A]',
       border: 'border-gray-800',
       text: 'text-white',
-      buttonBg: 'bg-[#D28C00]',
-      buttonHover: 'hover:bg-[#B77A00]'
+      buttonBg: 'bg-gradient-to-r from-[#D28C00] to-[#FFB020]',
+      buttonHover: 'hover:from-[#B77A00] hover:to-[#D28C00]',
+      headerBg: 'bg-gradient-to-r from-[#1A1A1A] to-[#2A2A2A]'
     },
     light: {
       bg: 'bg-white',
       border: 'border-gray-200',
       text: 'text-gray-900',
-      buttonBg: 'bg-purple-600',
-      buttonHover: 'hover:bg-purple-700'
+      buttonBg: 'bg-gradient-to-r from-purple-600 to-pink-600',
+      buttonHover: 'hover:from-purple-700 hover:to-pink-700',
+      headerBg: 'bg-gradient-to-r from-white to-gray-50'
     }
   };
   
   const currentTheme = isDarkMode ? theme.dark : theme.light;
   
   return (
-    <div className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
-      isExpanded ? 'w-[400px] h-[600px]' : 'w-auto h-auto'
-    }`}>
-      {!isExpanded ? (
-        // Minimized state - chat bubble
+    <>
+      {/* Floating button with more inviting design */}
+      <div className={`fixed bottom-6 right-6 z-50 ${isOpen ? 'hidden' : 'block'}`}>
         <button
           onClick={() => {
-            setIsExpanded(true);
+            setIsOpen(true);
             setHasInteracted(true);
           }}
-          className={`flex items-center gap-3 px-4 py-3 ${currentTheme.bg} ${currentTheme.border} border rounded-full shadow-lg transition-all hover:shadow-xl ${currentTheme.buttonBg} ${currentTheme.buttonHover}`}
+          className={`group flex items-center gap-3 px-5 py-3.5 ${currentTheme.buttonBg} text-white rounded-full shadow-xl transition-all duration-300 hover:shadow-2xl ${currentTheme.buttonHover} transform hover:scale-105`}
+          aria-label="Ask Sydney"
         >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
-          </svg>
-          <span className="text-white font-medium">Ask Sydney</span>
-        </button>
-      ) : (
-        // Expanded state
-        <div className={`flex flex-col h-full ${currentTheme.bg} ${currentTheme.border} border rounded-lg shadow-2xl`}>
-          <div className={`flex items-center justify-between p-3 ${currentTheme.border} border-b`}>
-            <h3 className={`font-medium ${currentTheme.text}`}>Sydney - Bundle Assistant</h3>
-            <button
-              onClick={() => setIsExpanded(false)}
-              className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
-            >
-              <svg className={`w-5 h-5 ${currentTheme.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+          <div className="relative">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+            </svg>
+            {/* Animated dots */}
+            <div className="absolute -top-1 -right-1 flex space-x-0.5">
+              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '0ms' }}></span>
+              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '150ms' }}></span>
+              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '300ms' }}></span>
+            </div>
           </div>
-          <div className="flex-1 overflow-hidden relative" ref={chatbotRef}>
-            <zapier-interfaces-chatbot-embed 
-              is-popup='false' 
-              chatbot-id='cma6zv294001y12wdgvajk0lj' 
-              height='100%' 
-              width='100%'
-              style={`--zapier-light-color: ${isDarkMode ? '#ffffff' : '#000000'}; --zapier-dark-color: ${isDarkMode ? '#1A1A1A' : '#ffffff'};`}
-            ></zapier-interfaces-chatbot-embed>
-            {/* Add overlay to ensure text visibility in light mode */}
-            {!isDarkMode && (
-              <style jsx>{`
-                zapier-interfaces-chatbot-embed {
-                  filter: contrast(1.1);
-                }
-              `}</style>
-            )}
+          <span className="text-white font-medium text-base">Chat with Sydney</span>
+          <svg className="w-5 h-5 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+        
+        {/* Welcome message bubble */}
+        {!hasInteracted && (
+          <div className={`absolute bottom-full right-0 mb-2 ${currentTheme.bg} ${currentTheme.border} border rounded-lg shadow-lg p-3 w-64 animate-fade-in`}>
+            <div className="relative">
+              <p className={`text-sm ${currentTheme.text}`}>
+                Hi! I'm Sydney 👋 I can help you understand our marketing services and find the perfect bundle for your business!
+              </p>
+              <div className={`absolute top-full right-8 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 ${isDarkMode ? 'border-t-[#1A1A1A]' : 'border-t-white'}`}></div>
+            </div>
+          </div>
+        )}
+        
+        {/* Pulse animation for attention */}
+        {!hasInteracted && (
+          <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-20 animate-pulse"></div>
+        )}
+      </div>
+      
+      {/* Chat window */}
+      {isOpen && isScriptLoaded && (
+        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+          <div className={`w-[380px] h-[600px] ${currentTheme.bg} rounded-2xl shadow-2xl overflow-hidden border ${currentTheme.border}`}>
+            {/* Header */}
+            <div className={`${currentTheme.headerBg} p-4 flex items-center justify-between border-b ${currentTheme.border}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full ${currentTheme.buttonBg} flex items-center justify-center`}>
+                  <span className="text-white text-lg">🤖</span>
+                </div>
+                <div>
+                  <h3 className={`font-semibold ${currentTheme.text}`}>Sydney</h3>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your Marketing Assistant</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
+                aria-label="Close chat"
+              >
+                <svg className={`w-5 h-5 ${currentTheme.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Chatbot embed */}
+            <div className="h-[calc(100%-80px)]">
+              <zapier-interfaces-chatbot-embed 
+                is-popup='false' 
+                chatbot-id='cma6zv294001y12wdgvajk0lj' 
+                height='100%' 
+                width='100%'
+              ></zapier-interfaces-chatbot-embed>
+            </div>
           </div>
         </div>
       )}
       
-      {/* Pulse animation for attention */}
-      {!hasInteracted && !isExpanded && (
-        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-75 animate-pulse"></div>
-      )}
-    </div>
+      {/* Styles for animations */}
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+    </>
   );
 };
 
