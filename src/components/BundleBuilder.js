@@ -684,8 +684,8 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
-// Simplified Sydney Chatbot - Direct Zapier Implementation
-const ChatbotWidget = () => {
+// Enhanced Sydney Chatbot with glowing, inviting design
+const ChatbotWidget = ({ isDarkMode }) => {
   useEffect(() => {
     // Load Zapier script if not already loaded
     const existingScript = document.querySelector('script[src*="zapier-interfaces"]');
@@ -696,7 +696,61 @@ const ChatbotWidget = () => {
       script.async = true;
       document.body.appendChild(script);
     }
-  }, []);
+
+    // Add custom styles for the chatbot button to make it more inviting
+    const customStyles = document.createElement('style');
+    customStyles.textContent = `
+      /* Enhanced chatbot button styling */
+      zapier-interfaces-chatbot-embed {
+        --chatbot-button-background: ${isDarkMode ? 'linear-gradient(135deg, #D28C00 0%, #FFBA38 100%)' : 'linear-gradient(135deg, #9333EA 0%, #DB2777 100%)'} !important;
+        --chatbot-button-color: ${isDarkMode ? '#1A1A1A' : '#FFFFFF'} !important;
+        --chatbot-button-border-radius: 50px !important;
+        --chatbot-button-box-shadow: 0 8px 32px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4), 0 0 20px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.3) !important;
+        --chatbot-button-hover-transform: scale(1.05) !important;
+        --chatbot-button-transition: all 0.3s ease !important;
+      }
+      
+      /* Custom glow animation */
+      @keyframes chatbot-glow {
+        0%, 100% {
+          box-shadow: 0 8px 32px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4), 0 0 20px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.3);
+        }
+        50% {
+          box-shadow: 0 12px 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6), 0 0 30px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.5);
+        }
+      }
+      
+      /* Apply glow animation to the chatbot button */
+      zapier-interfaces-chatbot-embed::part(button) {
+        animation: chatbot-glow 2s ease-in-out infinite;
+        background: ${isDarkMode ? 'linear-gradient(135deg, #D28C00 0%, #FFBA38 100%)' : 'linear-gradient(135deg, #9333EA 0%, #DB2777 100%)'} !important;
+        border: none !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        padding: 16px 24px !important;
+        min-width: 120px !important;
+        height: 64px !important;
+      }
+      
+      /* Hover effects */
+      zapier-interfaces-chatbot-embed::part(button):hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 16px 48px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.5), 0 0 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4) !important;
+      }
+      
+      /* Button icon styling */
+      zapier-interfaces-chatbot-embed::part(button-icon) {
+        width: 24px !important;
+        height: 24px !important;
+        margin-right: 8px !important;
+      }
+    `;
+    document.head.appendChild(customStyles);
+    
+    return () => {
+      document.head.removeChild(customStyles);
+    };
+  }, [isDarkMode]);
   
   // Use Zapier's popup implementation directly
   return (
@@ -1169,8 +1223,8 @@ const BundleBuilder = () => {
       {/* Improved animated background */}
       <AnimatedBackground isDarkMode={isDarkMode} />
       
-      {/* Chatbot Widget with Sydney */}
-      <ChatbotWidget />
+      {/* Enhanced Chatbot Widget with Sydney */}
+      <ChatbotWidget isDarkMode={isDarkMode} />
       
       {/* Header */}
       <div className={`${currentTheme.bgSecondary} border-b ${currentTheme.border} relative z-10`}>
@@ -1545,6 +1599,8 @@ const BundleBuilder = () => {
                   onSubmit={handleUserInfoSubmit} 
                   onCancel={() => setFormStep(0)}
                   setShowPrivacyPolicy={setShowPrivacyPolicy}
+                  theme={currentTheme}
+                  isDarkMode={isDarkMode}
                 />
               ) : (
                 <>
@@ -1566,6 +1622,8 @@ const BundleBuilder = () => {
                       subLength={subLength}
                       finalMonthly={final.toFixed(2)}
                       bundleID={bundleID}
+                      theme={currentTheme}
+                      isDarkMode={isDarkMode}
                     />
                   )}
                 </>
