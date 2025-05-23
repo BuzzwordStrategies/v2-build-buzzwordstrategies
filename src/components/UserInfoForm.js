@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 
-const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowPrivacyPolicy }) => {
+const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowPrivacyPolicy, theme, isDarkMode }) => {
   const [formData, setFormData] = useState({
     clientName: '',
     clientEmail: '',
@@ -65,115 +65,115 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h2 className="text-2xl font-bold text-white mb-4">Your Information</h2>
-        <p className="text-sm text-white/85 mb-6">Please provide your details to create your agreement</p>
+        <h2 className={`text-2xl font-bold ${theme.text} mb-4`}>Your Information</h2>
+        <p className={`text-sm ${theme.textSecondary} mb-6`}>Please provide your details to create your agreement</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-white/85 mb-1">Full Name *</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Full Name *</label>
             <input
               type="text"
               name="clientName"
               value={formData.clientName}
               onChange={handleChange}
-              className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientName ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+              className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientName ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
             {errors.clientName && <p className="mt-1 text-xs text-red-500">{errors.clientName}</p>}
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-white/85 mb-1">Email Address *</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Email Address *</label>
             <input
               type="email"
               name="clientEmail"
               value={formData.clientEmail}
               onChange={handleChange}
-              className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientEmail ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+              className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientEmail ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
             {errors.clientEmail && <p className="mt-1 text-xs text-red-500">{errors.clientEmail}</p>}
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-white/85 mb-1">Phone Number *</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Phone Number *</label>
             <input
               type="tel"
               name="clientPhone"
               value={formData.clientPhone}
               onChange={handleChange}
-              className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientPhone ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+              className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientPhone ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
             {errors.clientPhone && <p className="mt-1 text-xs text-red-500">{errors.clientPhone}</p>}
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-white/85 mb-1">Company Name</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Company Name</label>
             <input
               type="text"
               name="clientCompany"
               value={formData.clientCompany}
               onChange={handleChange}
-              className="w-full p-3 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors"
+              className={`w-full p-3 ${theme.bgTertiary} border ${theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
           </div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-white/85 mb-1">Company Website</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Company Website</label>
             <input
               type="text"
               name="clientWebsite"
               value={formData.clientWebsite}
               onChange={handleChange}
               placeholder="example.com"
-              className="w-full p-3 bg-[#2A2A2A] border border-[#D28C00]/20 rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors"
+              className={`w-full p-3 ${theme.bgTertiary} border ${theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
-            <p className="mt-1 text-xs text-white/80">Just enter your domain name (e.g., example.com)</p>
+            <p className={`mt-1 text-xs ${theme.textSecondary}`}>Just enter your domain name (e.g., example.com)</p>
           </div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-white/85 mb-1">Street Address *</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>Street Address *</label>
             <input
               type="text"
               name="clientAddress"
               value={formData.clientAddress}
               onChange={handleChange}
-              className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientAddress ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+              className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientAddress ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
             {errors.clientAddress && <p className="mt-1 text-xs text-red-500">{errors.clientAddress}</p>}
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-white/85 mb-1">City *</label>
+            <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>City *</label>
             <input
               type="text"
               name="clientCity"
               value={formData.clientCity}
               onChange={handleChange}
-              className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientCity ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+              className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientCity ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
             />
             {errors.clientCity && <p className="mt-1 text-xs text-red-500">{errors.clientCity}</p>}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-white/85 mb-1">State *</label>
+              <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>State *</label>
               <input
                 type="text"
                 name="clientState"
                 value={formData.clientState}
                 onChange={handleChange}
-                className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientState ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+                className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientState ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
               />
               {errors.clientState && <p className="mt-1 text-xs text-red-500">{errors.clientState}</p>}
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-white/85 mb-1">ZIP Code *</label>
+              <label className={`block text-sm font-medium ${theme.textSecondary} mb-1`}>ZIP Code *</label>
               <input
                 type="text"
                 name="clientZip"
                 value={formData.clientZip}
                 onChange={handleChange}
-                className={`w-full p-3 bg-[#2A2A2A] border ${errors.clientZip ? 'border-red-500' : 'border-[#D28C00]/20'} rounded-lg text-white placeholder-white/40 focus:border-[#D28C00]/50 focus:outline-none transition-colors`}
+                className={`w-full p-3 ${theme.bgTertiary} border ${errors.clientZip ? 'border-red-500' : theme.border} rounded-lg ${theme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'} focus:${theme.borderAccent} focus:outline-none transition-colors`}
               />
               {errors.clientZip && <p className="mt-1 text-xs text-red-500">{errors.clientZip}</p>}
             </div>
@@ -190,11 +190,11 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
                 type="checkbox"
                 checked={formData.marketingConsent}
                 onChange={handleChange}
-                className="w-4 h-4 text-[#D28C00] bg-[#2A2A2A] border-[#D28C00]/20 rounded focus:ring-[#D28C00]/50"
+                className={`w-4 h-4 ${theme.accentText} ${theme.bgTertiary} ${theme.border} rounded focus:ring-2 ${isDarkMode ? 'focus:ring-[#D28C00]' : 'focus:ring-purple-600'}`}
               />
             </div>
             <div className="ml-3">
-              <label htmlFor="marketingConsent" className="text-sm font-medium text-white/85">
+              <label htmlFor="marketingConsent" className={`text-sm font-medium ${theme.textSecondary}`}>
                 I agree to be contacted about future Buzzword Strategies marketing offers
               </label>
             </div>
@@ -211,15 +211,15 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
                 type="checkbox"
                 checked={formData.privacyConsent}
                 onChange={handleChange}
-                className="w-4 h-4 text-[#D28C00] bg-[#2A2A2A] border-[#D28C00]/20 rounded focus:ring-[#D28C00]/50"
+                className={`w-4 h-4 ${theme.accentText} ${theme.bgTertiary} ${theme.border} rounded focus:ring-2 ${isDarkMode ? 'focus:ring-[#D28C00]' : 'focus:ring-purple-600'}`}
               />
             </div>
             <div className="ml-3">
-              <label htmlFor="privacyConsent" className="text-sm font-medium text-white/85">
+              <label htmlFor="privacyConsent" className={`text-sm font-medium ${theme.textSecondary}`}>
                 I have read and agree to the <button 
                   type="button" 
                   onClick={() => setShowPrivacyPolicy(true)}
-                  className="text-[#D28C00] underline hover:text-[#B77A00]"
+                  className={`${theme.accentText} underline ${theme.accentHover}`}
                 >
                   Privacy Policy
                 </button>
@@ -232,8 +232,8 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
         </div>
         
         {/* Legal Compliance Disclosure */}
-        <div className="mt-6 p-4 bg-[#2A2A2A]/50 border border-[#D28C00]/20 rounded-lg">
-          <p className="text-xs text-white/80">
+        <div className={`mt-6 p-4 ${theme.bgTertiary} border ${theme.border} rounded-lg`}>
+          <p className={`text-xs ${theme.textSecondary}`}>
             By submitting this form, you consent to our collection and use of your personal information as described in our Privacy Policy. Your information will be processed securely via Stripe and stored in our Supabase database. We implement appropriate safeguards to protect your data and respect your privacy rights under applicable laws, including CCPA protections for California residents.
           </p>
         </div>
@@ -242,13 +242,13 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
           <button
             type="button"
             onClick={onCancel}
-            className="py-3 bg-[#2A2A2A] text-white/85 rounded-lg hover:bg-[#2A2A2A]/80 font-medium transition-colors"
+            className={`py-3 ${theme.bgTertiary} ${theme.textSecondary} rounded-lg hover:${theme.borderAccent} ${theme.border} border font-medium transition-colors`}
           >
             Back
           </button>
           <button
             type="submit"
-            className="py-3 bg-[#D28C00] text-[#1A1A1A] font-semibold rounded-lg hover:bg-[#B77A00] transition-colors"
+            className={`py-3 ${theme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-semibold rounded-lg ${theme.accentHover} transition-colors`}
           >
             Continue to Agreement
           </button>
@@ -265,6 +265,8 @@ const UserInfoForm = ({ onSubmit, onCancel, setShowPrivacyPolicy: parentSetShowP
             setShowPrivacyPolicy(false);
           }}
           currentDate={new Date().toLocaleDateString()}
+          theme={theme}
+          isDarkMode={isDarkMode}
         />
       )}
     </>
