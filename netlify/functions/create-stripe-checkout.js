@@ -23,10 +23,16 @@ exports.handler = async (event) => {
   // Ensure we have a bundleID
   const finalBundleID = bundleID || `bwb-${uuidv4()}`;
   
+  // Determine the correct base URL
+  // Priority: 1) Explicit URL env var, 2) Netlify's URL env var, 3) Fallback to new domain
+  const baseUrl = process.env.URL || process.env.DEPLOY_URL || 'https://bundle.buzzwordstrategies.com';
+  
+  console.log('Using base URL:', baseUrl);
+  
   try {
     console.log('Creating Stripe session with params:', params);
     
-    // Update Supabase with payment pending status
+    // Update Supabase with payment pending status (keeping your existing code)
     try {
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -59,7 +65,7 @@ exports.handler = async (event) => {
       throw new Error(`Invalid amount: ${finalMonthly}`);
     }
     
-    // Create a simple Stripe checkout session
+    // Create the Stripe checkout session with the correct URLs
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -82,9 +88,9 @@ exports.handler = async (event) => {
         },
       ],
       mode: 'subscription',
-      allow_promotion_codes: true, // Add this line to enable promo codes
-      success_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${finalBundleID}`,
-      cancel_url: `${process.env.URL || 'https://ephemeral-moonbeam-0a8703.netlify.app'}/cancel`,
+      allow_promotion_codes: true, // Enable promo codes
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&bundle_id=${finalBundleID}`,
+      cancel_url: `${baseUrl}/cancel`,
       metadata: {
         bundleID: finalBundleID
       }
@@ -92,16 +98,16 @@ exports.handler = async (event) => {
 
     console.log('Stripe session created:', session.id);
     console.log('Stripe checkout URL:', session.url);
+    console.log('Success URL will be:', `${baseUrl}/success?session_id=[SESSION_ID]&bundle_id=${finalBundleID}`);
     
-   // Redirect directly to Stripe
-// Redirect directly to Stripe
-return {
-  statusCode: 303,
-  headers: {
-    Location: session.url
-  },
-  body: ""
-};
+    // Redirect directly to Stripe
+    return {
+      statusCode: 303,
+      headers: {
+        Location: session.url
+      },
+      body: ""
+    };
     
   } catch (error) {
     console.error('Error creating Stripe session:', error);
