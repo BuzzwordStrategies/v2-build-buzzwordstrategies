@@ -1117,61 +1117,128 @@ const BundleBuilder = () => {
   }, [selectedBusiness]);
   
   // Mock save function (replace with your actual implementation)
- const saveToSupabase = useCallback(async (step, immediate = false) => {
+const saveToSupabase = useCallback(async (step, immediate = false) => {
+  // Don't save on initial load unless explicitly requested
   if (!initialLoadComplete && !immediate) {
     return bundleID;
   }
   
   try {
+    // Generate or use existing bundle ID
     const currentBundleID = bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // If we don't have a bundleID yet, set it
+    // Set the bundleID in state if we just generated it
     if (!bundleID) {
       setBundleID(currentBundleID);
     }
     
+    // Format selected services as a string
     const selectedServicesStr = Object.entries(selectedTiers)
       .filter(([, tier]) => tier)
       .map(([product, tier]) => `${product}: ${tier}`)
       .join(', ');
     
-    // Prepare bundle data
+    // Prepare the data according to your table schema
     const bundleData = {
-      action: 'save_bundle',
       bundle_id: currentBundleID,
       bundle_name: bundleName || 'My Bundle',
-      selected_tiers: selectedTiers,
+      selected_tiers: selectedTiers, // This will be sent as JSON for the jsonb column
       selected_services: selectedServicesStr,
-      sub_length: subLength,
+      sub_length: parseInt(subLength) || 3,
       final_monthly: parseFloat(final.toFixed(2)),
-      selected_business: selectedBusiness
+      selected_business: selectedBusiness || '',
+      form_step: step || 0,
+      status: 'in_progress',
+      updated_at: new Date().toISOString()
     };
     
-    console.log('Saving bundle data:', bundleData);
+    // Get Supabase credentials from environment
+    const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
     
-    // Save to the unified endpoint
-    const response = await fetch('/.netlify/functions/save-bundle-unified', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(bundleData)
-    });
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.error('Supabase credentials not found in environment');
+      // Still return the bundle ID so the user can continue
+      return currentBundleID;
+    }
     
-    const result = await response.json();
+    console.log('Attempting to save bundle data:', bundleData);
     
-    if (!response.ok || !result.success) {
-      console.error('Failed to save bundle:', result);
-      // Don't throw error - we want to allow the user to continue even if save fails
+    // First, check if this bundle already exists
+    const checkResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${currentBundleID}`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      }
+    );
+    
+    const existingRecords = await checkResponse.json();
+    
+    let saveResponse;
+    
+    if (existingRecords && existingRecords.length > 0) {
+      // Update existing record
+      console.log('Updating existing bundle record');
+      
+      saveResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${currentBundleID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(bundleData)
+        }
+      );
+    } else {
+      // Create new record
+      console.log('Creating new bundle record');
+      
+      // Add created_at for new records
+      bundleData.created_at = new Date().toISOString();
+      
+      saveResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/pending_orders`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(bundleData)
+        }
+      );
+    }
+    
+    const result = await saveResponse.json();
+    
+    if (!saveResponse.ok) {
+      console.error('Supabase save failed:', {
+        status: saveResponse.status,
+        statusText: saveResponse.statusText,
+        error: result
+      });
+      // Don't throw - allow user to continue
     } else {
       console.log('Bundle saved successfully:', result);
     }
     
     return currentBundleID;
+    
   } catch (error) {
     console.error('Error saving bundle data:', error);
-    // Don't throw - allow user to continue
-    return bundleID || null;
+    // Return bundle ID even on error so user can continue
+    return bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, initialLoadComplete]);
 
