@@ -1,6 +1,5 @@
-// Professional Bundle Builder with Robinhood-inspired design and integrated chatbot
+// Professional Bundle Builder with Complete Workflow Tracking
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import UserInfoForm from './UserInfoForm';
 import ContractAgreementForm from './ContractAgreementForm';
 
@@ -1037,7 +1036,7 @@ const BundleBuilder = () => {
   // Subscription acknowledgment state
   const [subscriptionAcknowledged, setSubscriptionAcknowledged] = useState(false);
   
-  // Bundle ID state
+  // Bundle ID state - this will be unique for each purchase attempt
   const [bundleID, setBundleID] = useState('');
   
   // Flag to prevent initial saving
@@ -1116,238 +1115,6 @@ const BundleBuilder = () => {
     return bestForIndustry["Something Else"][service][tier];
   }, [selectedBusiness]);
   
-  // Mock save function (replace with your actual implementation)
-const saveToSupabase = useCallback(async (step, immediate = false) => {
-  // Don't save on initial load unless explicitly requested
-  if (!initialLoadComplete && !immediate) {
-    return bundleID;
-  }
-  
-  try {
-    // Generate or use existing bundle ID
-    const currentBundleID = bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Set the bundleID in state if we just generated it
-    if (!bundleID) {
-      setBundleID(currentBundleID);
-    }
-    
-    // Format selected services as a string
-    const selectedServicesStr = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
-    // Prepare the data according to your table schema
-    const bundleData = {
-      bundle_id: currentBundleID,
-      bundle_name: bundleName || 'My Bundle',
-      selected_tiers: selectedTiers, // This will be sent as JSON for the jsonb column
-      selected_services: selectedServicesStr,
-      sub_length: parseInt(subLength) || 3,
-      final_monthly: parseFloat(final.toFixed(2)),
-      selected_business: selectedBusiness || '',
-      form_step: step || 0,
-      status: 'in_progress',
-      updated_at: new Date().toISOString()
-    };
-    
-    // Get Supabase credentials from environment
-    const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-    const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-    
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.error('Supabase credentials not found in environment');
-      // Still return the bundle ID so the user can continue
-      return currentBundleID;
-    }
-    
-    console.log('Attempting to save bundle data:', bundleData);
-    
-    // First, check if this bundle already exists
-    const checkResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${currentBundleID}`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        }
-      }
-    );
-    
-    const existingRecords = await checkResponse.json();
-    
-    let saveResponse;
-    
-    if (existingRecords && existingRecords.length > 0) {
-      // Update existing record
-      console.log('Updating existing bundle record');
-      
-      saveResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/pending_orders?bundle_id=eq.${currentBundleID}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify(bundleData)
-        }
-      );
-    } else {
-      // Create new record
-      console.log('Creating new bundle record');
-      
-      // Add created_at for new records
-      bundleData.created_at = new Date().toISOString();
-      
-      saveResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/pending_orders`,
-        {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify(bundleData)
-        }
-      );
-    }
-    
-    const result = await saveResponse.json();
-    
-    if (!saveResponse.ok) {
-      console.error('Supabase save failed:', {
-        status: saveResponse.status,
-        statusText: saveResponse.statusText,
-        error: result
-      });
-      // Don't throw - allow user to continue
-    } else {
-      console.log('Bundle saved successfully:', result);
-    }
-    
-    return currentBundleID;
-    
-  } catch (error) {
-    console.error('Error saving bundle data:', error);
-    // Return bundle ID even on error so user can continue
-    return bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }
-}, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, initialLoadComplete]);
-
-// Only one handleUserInfoSubmit function - this is the correct implementation
-const handleUserInfoSubmit = useCallback(async (formData) => {
-  try {
-    setUserInfo(formData);
-    
-    // Track GA4 event
-    trackEvent('checkout_progress', {
-      checkout_step: 2,
-      checkout_option: 'user_info_submitted'
-    });
-    
-    // Save customer info to Supabase
-    const response = await fetch('/.netlify/functions/save-bundle-unified', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'update_customer',
-        bundle_id: bundleID,
-        ...formData
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok || !result.success) {
-      console.error('Failed to save customer info:', result);
-      // Continue anyway - we don't want to block the user
-    }
-    
-    setFormStep(2);
-  } catch (error) {
-    console.error('Error submitting user info:', error);
-    // Continue anyway
-    setFormStep(2);
-  }
-}, [bundleID, trackEvent]);
-
-// Update the handleAgreementSubmit function:
-const handleAgreementSubmit = useCallback(async (agreementData) => {
-  setAgreementInfo(agreementData);
-  setIsLoading(true);
-  
-  try {
-    // Make sure we have a bundle ID
-    const finalBundleID = bundleID || await saveToSupabase(2, true);
-    
-    // Save agreement to Supabase
-    const response = await fetch('/.netlify/functions/save-bundle-unified', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'save_agreement',
-        bundle_id: finalBundleID,
-        ...agreementData
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok || !result.success) {
-      console.error('Failed to save agreement:', result);
-      // Continue to payment anyway
-    }
-    
-    const selectedServicesStr = Object.entries(selectedTiers)
-      .filter(([, tier]) => tier)
-      .map(([product, tier]) => `${product}: ${tier}`)
-      .join(', ');
-    
-    // Track GA4 purchase event
-    trackEvent('purchase', {
-      transaction_id: finalBundleID,
-      value: final,
-      currency: 'USD',
-      items: Object.entries(selectedTiers)
-        .filter(([, tier]) => tier)
-        .map(([product, tier]) => ({
-          item_name: product,
-          item_variant: tier,
-          price: pricing[product][tier],
-          quantity: 1
-        }))
-    });
-    
-    // Create payment URL
-    const queryParams = new URLSearchParams({
-      bundleID: finalBundleID,
-      bundleName: bundleName || 'My Bundle',
-      finalMonthly: final.toFixed(2),
-      subLength: subLength,
-      selectedServices: selectedServicesStr
-    }).toString();
-    
-    // Redirect to payment
-    window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
-  } catch (error) {
-    console.error('Error:', error);
-    alert('There was an error processing your request. Please try again.');
-    setIsLoading(false);
-  }
-}, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, trackEvent]);
-  
   // Handle product selection with smooth scroll
   const handleProductSelect = useCallback((product) => {
     setCurrentlyOpenService(product);
@@ -1386,15 +1153,7 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     });
   }, [trackEvent]);
   
-  // Debounced save function
-  const debouncedSave = useCallback(
-    debounce((step) => {
-      saveToSupabase(step);
-    }, 1000),
-    [saveToSupabase]
-  );
-  
-  // Handle bundle updates from chatbot
+  // Handle chatbot bundle updates
   const handleChatbotBundleUpdate = useCallback((updates) => {
     if (updates.selectedBusiness) {
       setSelectedBusiness(updates.selectedBusiness);
@@ -1415,12 +1174,7 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     if (updates.bundleName) {
       setBundleName(updates.bundleName);
     }
-    
-    // Save the updates
-    if (initialLoadComplete) {
-      debouncedSave(0);
-    }
-  }, [debouncedSave, initialLoadComplete]);
+  }, []);
   
   // Open modal for tier details
   const openTierDetailsModal = useCallback((service, tier) => {
@@ -1439,6 +1193,238 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     setShowServiceInfoModal(true);
   }, []);
   
+  // Create order function - creates a new database row when bundle is confirmed
+  const createOrder = useCallback(async () => {
+    try {
+      // Create a fresh bundle ID for this specific purchase attempt
+      const newBundleID = `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('Creating new order with bundle ID:', newBundleID);
+      
+      // Prepare the bundle data
+      const bundleData = {
+        bundle_id: newBundleID,
+        bundle_name: bundleName || 'My Bundle',
+        selected_tiers: selectedTiers,
+        selected_services: Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => `${product}: ${tier}`)
+          .join(', '),
+        sub_length: subLength,
+        final_monthly: final.toFixed(2),
+        selected_business: selectedBusiness,
+        status: 'bundle_started', // Initial status when they start checkout
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Create the initial order record
+      const response = await fetch('/.netlify/functions/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bundleData)
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to create order');
+      }
+      
+      console.log('Order created successfully:', result);
+      
+      // Update the bundle ID in state to use this new one
+      setBundleID(newBundleID);
+      
+      return newBundleID;
+      
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  }, [bundleName, selectedTiers, subLength, final, selectedBusiness]);
+  
+  // Handle user info submission - updates existing order row
+  const handleUserInfoSubmit = useCallback(async (formData) => {
+    try {
+      setUserInfo(formData);
+      
+      // Track GA4 event
+      trackEvent('checkout_progress', {
+        checkout_step: 2,
+        checkout_option: 'user_info_submitted'
+      });
+      
+      // Update the existing order with customer information
+      const response = await fetch('/.netlify/functions/update-order-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bundle_id: bundleID,
+          status: 'customer_info_added',
+          customer_info: formData
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        console.error('Failed to update order with customer info:', result);
+        // Continue anyway - we don't want to block the user
+      } else {
+        console.log('Order updated with customer info');
+      }
+      
+      setFormStep(2);
+    } catch (error) {
+      console.error('Error submitting user info:', error);
+      // Continue anyway
+      setFormStep(2);
+    }
+  }, [bundleID, trackEvent]);
+  
+  // Handle agreement submission - updates existing order row and redirects to payment
+  const handleAgreementSubmit = useCallback(async (agreementData) => {
+    setAgreementInfo(agreementData);
+    setIsLoading(true);
+    
+    try {
+      // Update the order with agreement information
+      const updateResponse = await fetch('/.netlify/functions/update-order-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bundle_id: bundleID,
+          status: 'agreement_signed',
+          agreement_info: agreementData
+        })
+      });
+      
+      const updateResult = await updateResponse.json();
+      
+      if (!updateResponse.ok || !updateResult.success) {
+        console.error('Failed to update order with agreement:', updateResult);
+        // Continue to payment anyway
+      }
+      
+      // Track GA4 purchase event
+      trackEvent('purchase', {
+        transaction_id: bundleID,
+        value: final,
+        currency: 'USD',
+        items: Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => ({
+            item_name: product,
+            item_variant: tier,
+            price: pricing[product][tier],
+            quantity: 1
+          }))
+      });
+      
+      // Update status to payment_initiated before redirecting
+      await fetch('/.netlify/functions/update-order-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bundle_id: bundleID,
+          status: 'payment_initiated'
+        })
+      });
+      
+      // Create payment URL
+      const selectedServicesStr = Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => `${product}: ${tier}`)
+        .join(', ');
+      
+      const queryParams = new URLSearchParams({
+        bundleID: bundleID,  // Now using the unique bundle ID for this order
+        bundleName: bundleName || 'My Bundle',
+        finalMonthly: final.toFixed(2),
+        subLength: subLength,
+        selectedServices: selectedServicesStr
+      }).toString();
+      
+      // Redirect to payment
+      window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+    } catch (error) {
+      console.error('Error:', error);
+      alert('There was an error processing your request. Please try again.');
+      setIsLoading(false);
+    }
+  }, [bundleID, bundleName, final, selectedTiers, subLength, trackEvent]);
+  
+  // Handle page abandonment - updates order status when user leaves
+  const handlePageAbandon = useCallback(async (reason) => {
+    if (bundleID && formStep > 0) {
+      try {
+        await fetch('/.netlify/functions/update-order-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bundle_id: bundleID,
+            status: 'abandoned',
+            abandoned_at_step: formStep,
+            rejection_reason: reason
+          })
+        });
+      } catch (error) {
+        console.error('Error updating abandonment status:', error);
+      }
+    }
+  }, [bundleID, formStep]);
+  
+  // Reset and start fresh - marks old order as abandoned and clears state
+  const resetAndStartFresh = useCallback(async () => {
+    // If there's an existing bundle in progress, mark it as abandoned
+    if (bundleID && formStep > 0) {
+      try {
+        await fetch('/.netlify/functions/update-order-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bundle_id: bundleID,
+            status: 'abandoned',
+            abandoned_at_step: formStep,
+            rejection_reason: 'User started new bundle configuration'
+          })
+        });
+        console.log('Previous bundle marked as abandoned');
+      } catch (error) {
+        console.error('Error marking bundle as abandoned:', error);
+      }
+    }
+    
+    // Clear all current state
+    setBundleID('');
+    setFormStep(0);
+    setUserInfo(null);
+    setAgreementInfo(null);
+    setShowPurchaseModal(false);
+    setBundleRejected(false);
+    
+    // Don't clear the bundle configuration - they might want to keep their selections
+    // But you could clear these too if you want a complete reset:
+    // setSelectedTiers({});
+    // setBundleName('');
+    // setSubLength(3);
+    
+    console.log('Ready for fresh bundle creation');
+  }, [bundleID, formStep]);
+  
   // Form submission handlers
   const handleBundleConfirm = useCallback(async () => {
     if (!subscriptionAcknowledged) {
@@ -1455,23 +1441,84 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
     });
     
     try {
-      await saveToSupabase(0, true);
+      // Create a new order in the database
+      await createOrder();
+      
+      // Move to the next step
       setFormStep(1);
+      
     } catch (error) {
-      console.error('Error confirming bundle:', error);
-      alert('There was an error saving your bundle. Please try again.');
+      console.error('Error creating order:', error);
+      alert('There was an error starting your order. Please try again.');
     }
-  }, [subscriptionAcknowledged, saveToSupabase, trackEvent]);
+  }, [subscriptionAcknowledged, createOrder, trackEvent]);
   
-  const handleBundleReject = useCallback(() => {
+  const handleBundleReject = useCallback(async () => {
     setBundleRejected(true);
     setShowPurchaseModal(false);
-  }, []);
+    
+    // If we have a bundle ID, update its status to rejected
+    if (bundleID) {
+      try {
+        await fetch('/.netlify/functions/update-order-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bundle_id: bundleID,
+            status: 'rejected',
+            rejection_reason: 'User canceled at bundle confirmation'
+          })
+        });
+      } catch (error) {
+        console.error('Error updating order status:', error);
+        // Don't show error to user - this is just tracking
+      }
+    }
+  }, [bundleID]);
   
-  // Load saved bundle on mount
+  // Track when they leave the page
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (bundleID && formStep > 0 && formStep < 3) {
+        // They're in the middle of the process
+        handlePageAbandon('User closed browser/tab');
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [bundleID, formStep, handlePageAbandon]);
+  
+  // Check if user is coming back to reconfigure
+  useEffect(() => {
+    const checkForReset = () => {
+      // If they have a bundle ID but they're back at the product selection
+      // and the modal is closed, they might be starting over
+      if (bundleID && !showPurchaseModal && formStep === 0) {
+        // Give them a moment to interact before assuming they're starting fresh
+        const resetTimer = setTimeout(() => {
+          if (!showPurchaseModal) {
+            console.log('User appears to be starting fresh');
+            resetAndStartFresh();
+          }
+        }, 3000); // 3 seconds to determine intent
+        
+        return () => clearTimeout(resetTimer);
+      }
+    };
+    
+    checkForReset();
+  }, [bundleID, showPurchaseModal, formStep, resetAndStartFresh]);
+  
+  // Load saved bundle configuration on mount (but not order-specific data)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("buzzwordBundle");
+      const saved = localStorage.getItem("buzzwordBundleConfig");
       if (saved) {
         const parsedData = JSON.parse(saved);
         setSelectedTiers(parsedData.selectedTiers || {});
@@ -1479,12 +1526,8 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
         setBundleName(parsedData.bundleName || "");
         setSelectedBusiness(parsedData.selectedBusiness || "");
         
-        if (parsedData.bundleID) {
-          setBundleID(parsedData.bundleID);
-        } else {
-          const newBundleID = `bwb-${uuidv4()}`;
-          setBundleID(newBundleID);
-        }
+        // Don't restore bundleID - each session should get a fresh one
+        // Don't restore formStep - they should start from beginning
         
         const firstService = Object.keys(parsedData.selectedTiers || {}).find(service => products.includes(service)) || products[0];
         setCurrentlyOpenService(firstService);
@@ -1495,41 +1538,29 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
             setCurrentStep(3);
           }
         }
-      } else {
-        const newBundleID = `bwb-${uuidv4()}`;
-        setBundleID(newBundleID);
       }
       
-      setTimeout(() => {
-        setInitialLoadComplete(true);
-      }, 1000);
+      setInitialLoadComplete(true);
     } catch (e) {
-      console.error("Error loading saved bundle:", e);
-      const newBundleID = `bwb-${uuidv4()}`;
-      setBundleID(newBundleID);
+      console.error("Error loading saved configuration:", e);
       setInitialLoadComplete(true);
     }
   }, []);
   
-  // Save bundle data
+  // Save bundle configuration (not order-specific data)
   useEffect(() => {
-    if (!bundleID || !initialLoadComplete) return;
-    
-    try {
-      const bundleData = {
-        bundleID,
+    if (initialLoadComplete) {
+      const configData = {
         selectedTiers,
         subLength,
         bundleName,
-        selectedBusiness,
-        finalMonthly: parseFloat(final.toFixed(2))
+        selectedBusiness
       };
       
-      localStorage.setItem("buzzwordBundle", JSON.stringify(bundleData));
-    } catch (error) {
-      console.error("Error saving bundle to localStorage:", error);
+      // Don't save bundleID - each session should get a fresh one
+      localStorage.setItem("buzzwordBundleConfig", JSON.stringify(configData));
     }
-  }, [bundleID, selectedTiers, subLength, bundleName, selectedBusiness, final, initialLoadComplete]);
+  }, [selectedTiers, subLength, bundleName, selectedBusiness, initialLoadComplete]);
   
   // Subscription Terms Disclosure Component
   const SubscriptionDisclosure = () => {
@@ -1559,6 +1590,23 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
       </div>
     );
   };
+  
+  // Start Over Button Component
+  const StartOverButton = () => (
+    <button
+      onClick={() => {
+        resetAndStartFresh();
+        // Optionally track this action
+        trackEvent('bundle_reset', {
+          previous_bundle_id: bundleID,
+          reset_at_step: formStep
+        });
+      }}
+      className={`text-sm ${currentTheme.textSecondary} hover:${currentTheme.text} underline mt-2`}
+    >
+      Start over with a new configuration
+    </button>
+  );
 
   return (
     <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} relative`}>
@@ -1640,10 +1688,6 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
                         business_type: type
                       });
                       
-                      if (initialLoadComplete) {
-                        debouncedSave(0);
-                      }
-                      
                       setTimeout(() => {
                         if (productsSectionRef.current) {
                           const yOffset = -80;
@@ -1686,12 +1730,7 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
                 step="3"
                 value={subLength}
                 onChange={(e) => {
-                  const newValue = parseInt(e.target.value);
-                  setSubLength(newValue);
-                  
-                  if (initialLoadComplete) {
-                    debouncedSave(0);
-                  }
+                  setSubLength(parseInt(e.target.value));
                 }}
                 className={`w-full h-1.5 rounded-full appearance-none cursor-pointer ${currentTheme.bgTertiary}`}
                 style={{
@@ -1897,12 +1936,7 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
                     type="text"
                     placeholder="Bundle Name (Optional)"
                     value={bundleName}
-                    onChange={(e) => {
-                      setBundleName(e.target.value);
-                      if (initialLoadComplete) {
-                        debouncedSave(0);
-                      }
-                    }}
+                    onChange={(e) => setBundleName(e.target.value)}
                     className={`w-full p-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg mb-4 ${currentTheme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'}`}
                   />
                   
@@ -1935,6 +1969,8 @@ const handleAgreementSubmit = useCallback(async (agreementData) => {
                   </div>
                   
                   <SubscriptionDisclosure />
+                  
+                  {bundleRejected && <StartOverButton />}
                 </>
               ) : formStep === 1 ? (
                 <UserInfoForm 
