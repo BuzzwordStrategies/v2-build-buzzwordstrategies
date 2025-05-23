@@ -71,17 +71,20 @@ const ServiceIcon = ({ service, className = "w-6 h-6" }) => {
   return icons[service] || icons["Meta Ads"];
 };
 
-// Success stories
+// Success stories with disclaimers
 const serviceSuccessStories = {
-  "Meta Ads": "A dental clinic in Denver increased new patient appointments by 43% in just 3 months using our Meta Ads service, with a 5.2x return on ad spend. Individual results may vary based on industry, competition, and market conditions.",
-  "Google Ads": "A local fitness center generated 127 new membership sign-ups in their first quarter with our Google Ads management, averaging just $38 per acquisition. Results will vary based on your specific business goals and market.",
-  "TikTok Ads": "A specialty dental lab reached over 500,000 dentists with engaging before/after content, resulting in 47 new lab accounts within 60 days. Performance depends on content quality and audience receptiveness.",
-  "SEO": "A small business owner increased organic traffic by 215% year-over-year after 6 months of our SEO service, resulting in 28 new monthly leads. SEO results typically take 3-6 months and vary by industry and competition.",
-  "GBP Ranker": "A multi-location dental practice saw a 67% increase in Google Maps direction requests after optimizing their Google Business Profile. Results depend on local competition and review generation ability.",
-  "Backlinks": "An e-commerce store improved domain authority from 18 to 42 in one year with our backlink service, resulting in page 1 rankings for 78 target keywords. Results vary based on current authority and competition.",
-  "Content": "A B2B service provider established themselves as an industry thought leader, with their blog content generating 34 qualified leads per month. Content marketing typically requires consistency over time for optimal results.",
-  "Social Posts": "A fitness studio increased their social following by 324% in 6 months while generating consistent client referrals through engagement. Social media success depends on content quality and audience engagement."
+  "Meta Ads": "A dental clinic in Denver increased new patient appointments by 43% in just 3 months using our Meta Ads service, with a 5.2x return on ad spend.",
+  "Google Ads": "A local fitness center generated 127 new membership sign-ups in their first quarter with our Google Ads management, averaging just $38 per acquisition.",
+  "TikTok Ads": "A specialty dental lab reached over 500,000 dentists with engaging before/after content, resulting in 47 new lab accounts within 60 days.",
+  "SEO": "A small business owner increased organic traffic by 215% year-over-year after 6 months of our SEO service, resulting in 28 new monthly leads.",
+  "GBP Ranker": "A multi-location dental practice saw a 67% increase in Google Maps direction requests after optimizing their Google Business Profile.",
+  "Backlinks": "An e-commerce store improved domain authority from 18 to 42 in one year with our backlink service, resulting in page 1 rankings for 78 target keywords.",
+  "Content": "A B2B service provider established themselves as an industry thought leader, with their blog content generating 34 qualified leads per month.",
+  "Social Posts": "A fitness studio increased their social following by 324% in 6 months while generating consistent client referrals through engagement."
 };
+
+// Success story disclaimer
+const successStoryDisclaimer = "* Individual results may vary. Performance depends on factors including industry, competition, market conditions, budget, and implementation. Past results do not guarantee future performance.";
 
 // Pricing data
 const pricing = {
@@ -681,180 +684,57 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
-// Simplified Sydney Chatbot - Purely Conversational
-const ChatbotWidget = ({ isDarkMode }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  
+// Simplified Sydney Chatbot - Direct Zapier Implementation
+const ChatbotWidget = () => {
   useEffect(() => {
-    // Check if script is already loaded
+    // Load Zapier script if not already loaded
     const existingScript = document.querySelector('script[src*="zapier-interfaces"]');
-    if (existingScript) {
-      setIsScriptLoaded(true);
-      return;
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
+      script.type = 'module';
+      script.async = true;
+      document.body.appendChild(script);
     }
-    
-    // Load Zapier script
-    const script = document.createElement('script');
-    script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
-    script.type = 'module';
-    script.async = true;
-    script.onload = () => setIsScriptLoaded(true);
-    document.body.appendChild(script);
-    
-    return () => {
-      // Don't remove the script as it might be needed
-    };
   }, []);
   
-  const theme = {
-    dark: {
-      bg: 'bg-[#1A1A1A]',
-      border: 'border-gray-800',
-      text: 'text-white',
-      buttonBg: 'bg-gradient-to-r from-[#D28C00] to-[#FFB020]',
-      buttonHover: 'hover:from-[#B77A00] hover:to-[#D28C00]',
-      headerBg: 'bg-gradient-to-r from-[#1A1A1A] to-[#2A2A2A]'
-    },
-    light: {
-      bg: 'bg-white',
-      border: 'border-gray-200',
-      text: 'text-gray-900',
-      buttonBg: 'bg-gradient-to-r from-purple-600 to-pink-600',
-      buttonHover: 'hover:from-purple-700 hover:to-pink-700',
-      headerBg: 'bg-gradient-to-r from-white to-gray-50'
-    }
-  };
-  
-  const currentTheme = isDarkMode ? theme.dark : theme.light;
-  
+  // Use Zapier's popup implementation directly
   return (
-    <>
-      {/* Floating button with more inviting design */}
-      <div className={`fixed bottom-6 right-6 z-50 ${isOpen ? 'hidden' : 'block'}`}>
-        <button
-          onClick={() => {
-            setIsOpen(true);
-            setHasInteracted(true);
-          }}
-          className={`group flex items-center gap-3 px-5 py-3.5 ${currentTheme.buttonBg} text-white rounded-full shadow-xl transition-all duration-300 hover:shadow-2xl ${currentTheme.buttonHover} transform hover:scale-105`}
-          aria-label="Ask Sydney"
-        >
-          <div className="relative">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
-            </svg>
-            {/* Animated dots */}
-            <div className="absolute -top-1 -right-1 flex space-x-0.5">
-              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '0ms' }}></span>
-              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '150ms' }}></span>
-              <span className="animate-bounce inline-block w-1.5 h-1.5 bg-white rounded-full" style={{ animationDelay: '300ms' }}></span>
-            </div>
-          </div>
-          <span className="text-white font-medium text-base">Chat with Sydney</span>
-          <svg className="w-5 h-5 text-white transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </button>
-        
-        {/* Welcome message bubble */}
-        {!hasInteracted && (
-          <div className={`absolute bottom-full right-0 mb-2 ${currentTheme.bg} ${currentTheme.border} border rounded-lg shadow-lg p-3 w-64 animate-fade-in`}>
-            <div className="relative">
-              <p className={`text-sm ${currentTheme.text}`}>
-                Hi! I'm Sydney 👋 I can help you understand our marketing services and find the perfect bundle for your business!
-              </p>
-              <div className={`absolute top-full right-8 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 ${isDarkMode ? 'border-t-[#1A1A1A]' : 'border-t-white'}`}></div>
-            </div>
-          </div>
-        )}
-        
-        {/* Pulse animation for attention */}
-        {!hasInteracted && (
-          <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full opacity-20 animate-pulse"></div>
-        )}
-      </div>
-      
-      {/* Chat window */}
-      {isOpen && isScriptLoaded && (
-        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
-          <div className={`w-[380px] h-[600px] ${currentTheme.bg} rounded-2xl shadow-2xl overflow-hidden border ${currentTheme.border}`}>
-            {/* Header */}
-            <div className={`${currentTheme.headerBg} p-4 flex items-center justify-between border-b ${currentTheme.border}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${currentTheme.buttonBg} flex items-center justify-center`}>
-                  <span className="text-white text-lg">🤖</span>
-                </div>
-                <div>
-                  <h3 className={`font-semibold ${currentTheme.text}`}>Sydney</h3>
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your Marketing Assistant</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
-                aria-label="Close chat"
-              >
-                <svg className={`w-5 h-5 ${currentTheme.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Chatbot embed */}
-            <div className="h-[calc(100%-80px)]">
-              <zapier-interfaces-chatbot-embed 
-                is-popup='false' 
-                chatbot-id='cma6zv294001y12wdgvajk0lj' 
-                height='100%' 
-                width='100%'
-              ></zapier-interfaces-chatbot-embed>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Styles for animations */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-      `}</style>
-    </>
+    <zapier-interfaces-chatbot-embed 
+      is-popup='true' 
+      chatbot-id='cma6zv294001y12wdgvajk0lj'
+    ></zapier-interfaces-chatbot-embed>
   );
 };
 
 // Main Component
 const BundleBuilder = () => {
-  // Theme state
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Theme state - detect system preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check system preference
+    if (typeof window !== 'undefined') {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return true; // Default to dark if can't detect
+  });
+  
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => {
+      setIsDarkMode(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+  
+  // GA4 Event Tracking
+  const trackEvent = useCallback((eventName, parameters = {}) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', eventName, parameters);
+    }
+  }, []);
   
   // State variables
   const [selectedTiers, setSelectedTiers] = useState({});
@@ -1024,15 +904,27 @@ const BundleBuilder = () => {
       [service]: prev[service] === tier ? null : tier
     }));
     
+    // Track GA4 event
+    trackEvent('tier_selected', {
+      service: service,
+      tier: tier,
+      action: selectedTiers[service] === tier ? 'deselected' : 'selected'
+    });
+    
     if (bundleID && initialLoadComplete) {
       debouncedSave(0);
     }
-  }, [bundleID, debouncedSave, initialLoadComplete]);
+  }, [bundleID, debouncedSave, initialLoadComplete, selectedTiers, trackEvent]);
   
   // Handle product selection with smooth scroll
   const handleProductSelect = useCallback((product) => {
     setCurrentlyOpenService(product);
     setCurrentStep(3);
+    
+    // Track GA4 event
+    trackEvent('product_selected', {
+      product: product
+    });
     
     setTimeout(() => {
       if (tiersSectionRef.current) {
@@ -1041,7 +933,7 @@ const BundleBuilder = () => {
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
     }, 300);
-  }, []);
+  }, [trackEvent]);
   
   // Handle bundle updates from chatbot
   const handleChatbotBundleUpdate = useCallback((updates) => {
@@ -1097,6 +989,12 @@ const BundleBuilder = () => {
     
     setBundleRejected(false);
     
+    // Track GA4 event
+    trackEvent('checkout_progress', {
+      checkout_step: 1,
+      checkout_option: 'bundle_confirmed'
+    });
+    
     try {
       await saveToSupabase(0, true);
       setFormStep(1);
@@ -1104,7 +1002,7 @@ const BundleBuilder = () => {
       console.error('Error confirming bundle:', error);
       alert('There was an error saving your bundle. Please try again.');
     }
-  }, [subscriptionAcknowledged, saveToSupabase]);
+  }, [subscriptionAcknowledged, saveToSupabase, trackEvent]);
   
   const handleBundleReject = useCallback(() => {
     setBundleRejected(true);
@@ -1114,13 +1012,20 @@ const BundleBuilder = () => {
   const handleUserInfoSubmit = useCallback(async (formData) => {
     try {
       setUserInfo(formData);
+      
+      // Track GA4 event
+      trackEvent('checkout_progress', {
+        checkout_step: 2,
+        checkout_option: 'user_info_submitted'
+      });
+      
       await saveToSupabase(1, true);
       setFormStep(2);
     } catch (error) {
       console.error('Error submitting user info:', error);
       alert('There was an error saving your information. Please try again.');
     }
-  }, [saveToSupabase]);
+  }, [saveToSupabase, trackEvent]);
   
   const handleAgreementSubmit = useCallback(async (agreementData) => {
     setAgreementInfo(agreementData);
@@ -1133,6 +1038,21 @@ const BundleBuilder = () => {
         .filter(([, tier]) => tier)
         .map(([product, tier]) => `${product}: ${tier}`)
         .join(', ');
+      
+      // Track GA4 purchase event
+      trackEvent('purchase', {
+        transaction_id: finalBundleID,
+        value: final,
+        currency: 'USD',
+        items: Object.entries(selectedTiers)
+          .filter(([, tier]) => tier)
+          .map(([product, tier]) => ({
+            item_name: product,
+            item_variant: tier,
+            price: pricing[product][tier],
+            quantity: 1
+          }))
+      });
       
       // Create payment URL (replace with your actual implementation)
       const queryParams = new URLSearchParams({
@@ -1150,7 +1070,7 @@ const BundleBuilder = () => {
       alert(`Error: ${error.message || 'An unexpected error occurred'}. Please try again.`);
       setIsLoading(false);
     }
-  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo]);
+  }, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, userInfo, trackEvent]);
   
   // Load saved bundle on mount
   useEffect(() => {
@@ -1250,19 +1170,7 @@ const BundleBuilder = () => {
       <AnimatedBackground isDarkMode={isDarkMode} />
       
       {/* Chatbot Widget with Sydney */}
-      <ChatbotWidget 
-        isDarkMode={isDarkMode}
-        bundleData={{
-          bundleID,
-          selectedTiers,
-          subLength,
-          bundleName,
-          selectedBusiness,
-          finalMonthly: final,
-          totalSaved
-        }}
-        onUpdateBundle={handleChatbotBundleUpdate}
-      />
+      <ChatbotWidget />
       
       {/* Header */}
       <div className={`${currentTheme.bgSecondary} border-b ${currentTheme.border} relative z-10`}>
@@ -1330,6 +1238,11 @@ const BundleBuilder = () => {
                     onClick={() => {
                       setSelectedBusiness(type);
                       setCurrentStep(2);
+                      
+                      // Track GA4 event
+                      trackEvent('business_type_selected', {
+                        business_type: type
+                      });
                       
                       if (initialLoadComplete) {
                         debouncedSave(0);
@@ -1423,7 +1336,19 @@ const BundleBuilder = () => {
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-medium ${currentTheme.textSecondary}`}>Selected Services</h3>
               <button
-                onClick={() => setShowPurchaseModal(true)}
+                onClick={() => {
+                  setShowPurchaseModal(true);
+                  // Track GA4 event
+                  trackEvent('begin_checkout', {
+                    value: final,
+                    currency: 'USD',
+                    items: selected.map(([product, tier]) => ({
+                      item_name: product,
+                      item_variant: tier,
+                      price: pricing[product][tier]
+                    }))
+                  });
+                }}
                 className={`px-4 py-2 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} text-sm font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
               >
                 Continue to Purchase
@@ -1749,12 +1674,16 @@ const BundleBuilder = () => {
                 {serviceInfoContent.description}
               </p>
               
-              <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg`}>
+              <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg mb-3`}>
                 <h3 className={`text-sm font-medium ${currentTheme.accentText} mb-2`}>Success Story</h3>
                 <p className={`text-sm ${currentTheme.textSecondary} italic`}>
                   "{serviceInfoContent.successStory}"
                 </p>
               </div>
+              
+              <p className={`text-xs ${currentTheme.textSecondary} italic`}>
+                {successStoryDisclaimer}
+              </p>
             </div>
             
             <div className="flex gap-3">
