@@ -294,7 +294,7 @@ const bestForIndustry = {
     "GBP Ranker": {
       Base: "Enhance local visibility & gather more reviews",
       Standard: "Become the preferred choice in local searches",
-      Premium: "Improve local search visibility across all service areas"
+      Premium: "Improve local search visibility across service areas"
     },
     "Backlinks": {
       Base: "Build initial domain authority & credibility",
@@ -684,6 +684,7 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
+// Enhanced Sydney Chatbot with attention-grabbing features
 const ChatbotWidget = ({ isDarkMode }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showNotificationBadge, setShowNotificationBadge] = useState(true);
@@ -969,7 +970,6 @@ const ChatbotWidget = ({ isDarkMode }) => {
   );
 };
 
-export default ChatbotWidget;
 // Main Component
 const BundleBuilder = () => {
   // Theme state - detect system preference
