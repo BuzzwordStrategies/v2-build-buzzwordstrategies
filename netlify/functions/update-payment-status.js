@@ -1,5 +1,6 @@
 // netlify/functions/update-payment-status.js
 const axios = require('axios');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
   console.log('Starting update-payment-status handler');
@@ -30,9 +31,51 @@ exports.handler = async (event) => {
       };
     }
 
+    // Retrieve the full checkout session from Stripe to get promo code info
+    let promoCode = null;
+    let discountAmount = null;
+    let discountPercentage = null;
+    
+    try {
+      const session = await stripe.checkout.sessions.retrieve(stripeSessionID, {
+        expand: ['total_details.breakdown']
+      });
+      
+      console.log('Retrieved Stripe session:', JSON.stringify(session, null, 2));
+      
+      // Check if there's a discount applied
+      if (session.total_details && session.total_details.breakdown && session.total_details.breakdown.discounts) {
+        const discounts = session.total_details.breakdown.discounts;
+        if (discounts.length > 0) {
+          const discount = discounts[0];
+          
+          // Get the promotion code
+          if (discount.discount && discount.discount.promotion_code) {
+            // Retrieve the full promotion code object
+            const promotionCode = await stripe.promotionCodes.retrieve(discount.discount.promotion_code);
+            promoCode = promotionCode.code;
+            
+            // Get discount details
+            if (discount.discount.coupon) {
+              if (discount.discount.coupon.percent_off) {
+                discountPercentage = discount.discount.coupon.percent_off;
+              } else if (discount.discount.coupon.amount_off) {
+                discountAmount = discount.discount.coupon.amount_off / 100; // Convert from cents
+              }
+            }
+          }
+        }
+      }
+      
+      console.log('Promo code details:', { promoCode, discountAmount, discountPercentage });
+    } catch (stripeError) {
+      console.error('Error retrieving Stripe session:', stripeError);
+      // Continue without promo code info if there's an error
+    }
+
     // Update Supabase
     console.log('Updating Supabase with payment status...');
-    const updateResult = await updateSupabase(bundleID, stripeSessionID, status || 'paid');
+    const updateResult = await updateSupabase(bundleID, stripeSessionID, status || 'paid', promoCode, discountAmount, discountPercentage);
     console.log('Supabase update result:', updateResult);
 
     return {
@@ -40,7 +83,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({ 
         success: true,
         message: 'Payment status updated successfully',
-        data: updateResult
+        data: updateResult,
+        promoCode: promoCode
       })
     };
   } catch (error) {
@@ -58,7 +102,7 @@ exports.handler = async (event) => {
   }
 };
 
-async function updateSupabase(bundleID, stripeSessionID, status) {
+async function updateSupabase(bundleID, stripeSessionID, status, promoCode, discountAmount, discountPercentage) {
   console.log('Starting updateSupabase function');
   
   try {
@@ -77,6 +121,13 @@ async function updateSupabase(bundleID, stripeSessionID, status) {
       status: status || 'paid',
       updated_at: new Date().toISOString()
     };
+    
+    // Add promo code fields if a promo code was used
+    if (promoCode) {
+      updateData.promo_code = promoCode;
+      updateData.discount_amount = discountAmount;
+      updateData.discount_percentage = discountPercentage;
+    }
     
     console.log('Update data:', JSON.stringify(updateData, null, 2));
     console.log('Supabase URL:', SUPABASE_URL);
@@ -98,7 +149,8 @@ async function updateSupabase(bundleID, stripeSessionID, status) {
     
     return {
       status: 'success',
-      data: response.data
+      data: response.data,
+      promoCode: promoCode
     };
   } catch (error) {
     console.error('Error in updateSupabase function:', error);
