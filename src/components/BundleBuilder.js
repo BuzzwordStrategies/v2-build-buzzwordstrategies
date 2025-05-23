@@ -1117,67 +1117,169 @@ const BundleBuilder = () => {
   }, [selectedBusiness]);
   
   // Mock save function (replace with your actual implementation)
-  const saveToSupabase = useCallback(async (step, immediate = false) => {
-    if (!initialLoadComplete && !immediate) {
-      return bundleID;
+ const saveToSupabase = useCallback(async (step, immediate = false) => {
+  if (!initialLoadComplete && !immediate) {
+    return bundleID;
+  }
+  
+  try {
+    const currentBundleID = bundleID || `bwb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // If we don't have a bundleID yet, set it
+    if (!bundleID) {
+      setBundleID(currentBundleID);
     }
     
-    try {
-      const currentBundleID = bundleID || `bwb-${uuidv4()}`;
-      
-      const selectedServices = Object.entries(selectedTiers)
-        .filter(([, tier]) => tier)
-        .map(([product, tier]) => `${product}: ${tier}`)
-        .join(', ');
-        
-      const bundleData = {
-        bundleID: currentBundleID,
-        bundleName: bundleName || 'My Bundle',
-        selectedTiers: selectedTiers,
-        subLength,
-        selectedBusiness,
-        finalMonthly: parseFloat(final.toFixed(2)),
-        formStep: step,
-        selectedServices,
-        userInfo: step >= 1 ? userInfo : null,
-        agreementInfo: step >= 2 ? agreementInfo : null
-      };
-      
-      // Your save implementation here
-      console.log('Saving bundle data:', bundleData);
-      
-      return currentBundleID;
-    } catch (error) {
-      console.error('Error saving bundle data:', error);
-      return bundleID || null;
-    }
-  }, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, userInfo, agreementInfo, initialLoadComplete]);
-  
-  const debouncedSave = useCallback(
-    debounce((step) => {
-      saveToSupabase(step);
-    }, 2000),
-    [saveToSupabase]
-  );
-  
-  // Handle tier selection
-  const handleTierSelect = useCallback(async (service, tier) => {
-    setSelectedTiers(prev => ({
-      ...prev,
-      [service]: prev[service] === tier ? null : tier
-    }));
+    const selectedServicesStr = Object.entries(selectedTiers)
+      .filter(([, tier]) => tier)
+      .map(([product, tier]) => `${product}: ${tier}`)
+      .join(', ');
     
-    // Track GA4 event
-    trackEvent('tier_selected', {
-      service: service,
-      tier: tier,
-      action: selectedTiers[service] === tier ? 'deselected' : 'selected'
+    // Prepare bundle data
+    const bundleData = {
+      action: 'save_bundle',
+      bundle_id: currentBundleID,
+      bundle_name: bundleName || 'My Bundle',
+      selected_tiers: selectedTiers,
+      selected_services: selectedServicesStr,
+      sub_length: subLength,
+      final_monthly: parseFloat(final.toFixed(2)),
+      selected_business: selectedBusiness
+    };
+    
+    console.log('Saving bundle data:', bundleData);
+    
+    // Save to the unified endpoint
+    const response = await fetch('/.netlify/functions/save-bundle-unified', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bundleData)
     });
     
-    if (bundleID && initialLoadComplete) {
-      debouncedSave(0);
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      console.error('Failed to save bundle:', result);
+      // Don't throw error - we want to allow the user to continue even if save fails
+    } else {
+      console.log('Bundle saved successfully:', result);
     }
-  }, [bundleID, debouncedSave, initialLoadComplete, selectedTiers, trackEvent]);
+    
+    return currentBundleID;
+  } catch (error) {
+    console.error('Error saving bundle data:', error);
+    // Don't throw - allow user to continue
+    return bundleID || null;
+  }
+}, [bundleID, bundleName, selectedTiers, subLength, selectedBusiness, final, initialLoadComplete]);
+
+// Update the handleUserInfoSubmit function:
+const handleUserInfoSubmit = useCallback(async (formData) => {
+  try {
+    setUserInfo(formData);
+    
+    // Track GA4 event
+    trackEvent('checkout_progress', {
+      checkout_step: 2,
+      checkout_option: 'user_info_submitted'
+    });
+    
+    // Save customer info to Supabase
+    const response = await fetch('/.netlify/functions/save-bundle-unified', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'update_customer',
+        bundle_id: bundleID,
+        ...formData
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      console.error('Failed to save customer info:', result);
+      // Continue anyway - we don't want to block the user
+    }
+    
+    setFormStep(2);
+  } catch (error) {
+    console.error('Error submitting user info:', error);
+    // Continue anyway
+    setFormStep(2);
+  }
+}, [bundleID, trackEvent]);
+
+// Update the handleAgreementSubmit function:
+const handleAgreementSubmit = useCallback(async (agreementData) => {
+  setAgreementInfo(agreementData);
+  setIsLoading(true);
+  
+  try {
+    // Make sure we have a bundle ID
+    const finalBundleID = bundleID || await saveToSupabase(2, true);
+    
+    // Save agreement to Supabase
+    const response = await fetch('/.netlify/functions/save-bundle-unified', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'save_agreement',
+        bundle_id: finalBundleID,
+        ...agreementData
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      console.error('Failed to save agreement:', result);
+      // Continue to payment anyway
+    }
+    
+    const selectedServicesStr = Object.entries(selectedTiers)
+      .filter(([, tier]) => tier)
+      .map(([product, tier]) => `${product}: ${tier}`)
+      .join(', ');
+    
+    // Track GA4 purchase event
+    trackEvent('purchase', {
+      transaction_id: finalBundleID,
+      value: final,
+      currency: 'USD',
+      items: Object.entries(selectedTiers)
+        .filter(([, tier]) => tier)
+        .map(([product, tier]) => ({
+          item_name: product,
+          item_variant: tier,
+          price: pricing[product][tier],
+          quantity: 1
+        }))
+    });
+    
+    // Create payment URL
+    const queryParams = new URLSearchParams({
+      bundleID: finalBundleID,
+      bundleName: bundleName || 'My Bundle',
+      finalMonthly: final.toFixed(2),
+      subLength: subLength,
+      selectedServices: selectedServicesStr
+    }).toString();
+    
+    // Redirect to payment
+    window.location.href = `/.netlify/functions/create-stripe-checkout?${queryParams}`;
+  } catch (error) {
+    console.error('Error:', error);
+    alert('There was an error processing your request. Please try again.');
+    setIsLoading(false);
+  }
+}, [bundleID, bundleName, final, saveToSupabase, selectedTiers, subLength, trackEvent]);
   
   // Handle product selection with smooth scroll
   const handleProductSelect = useCallback((product) => {
