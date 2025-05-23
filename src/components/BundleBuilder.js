@@ -593,7 +593,7 @@ const debounce = (func, wait) => {
   };
 };
 
-// Subtle animated gradient background
+// Improved animated gradient background with honey-like flow
 const AnimatedBackground = ({ isDarkMode }) => {
   const canvasRef = useRef(null);
   
@@ -602,34 +602,70 @@ const AnimatedBackground = ({ isDarkMode }) => {
     const ctx = canvas.getContext('2d');
     let animationId;
     let time = 0;
+    let blobs = [];
     
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      
+      // Initialize blobs for honey-like effect
+      blobs = [];
+      for (let i = 0; i < 5; i++) {
+        blobs.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: 200 + Math.random() * 100,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
     };
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
     const animate = () => {
-      time += 0.001;
+      time += 0.005;
       
-      if (isDarkMode) {
-        // Dark mode: subtle gold gradient
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, `rgba(210, 140, 0, ${0.02 + Math.sin(time) * 0.01})`);
-        gradient.addColorStop(0.5, `rgba(26, 26, 26, 0)`);
-        gradient.addColorStop(1, `rgba(210, 140, 0, ${0.02 + Math.cos(time) * 0.01})`);
-        ctx.fillStyle = gradient;
-      } else {
-        // Light mode: subtle purple to pink gradient
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, `rgba(147, 51, 234, ${0.03 + Math.sin(time) * 0.01})`);
-        gradient.addColorStop(0.5, `rgba(255, 255, 255, 0)`);
-        gradient.addColorStop(1, `rgba(236, 72, 153, ${0.03 + Math.cos(time) * 0.01})`);
-        ctx.fillStyle = gradient;
-      }
-      
+      // Clear canvas
+      ctx.fillStyle = isDarkMode ? '#000000' : '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw blobs
+      blobs.forEach((blob, index) => {
+        // Update position with slow, fluid movement
+        blob.x += blob.vx;
+        blob.y += blob.vy;
+        blob.phase += 0.01;
+        
+        // Soft boundaries
+        if (blob.x < -blob.radius) blob.x = canvas.width + blob.radius;
+        if (blob.x > canvas.width + blob.radius) blob.x = -blob.radius;
+        if (blob.y < -blob.radius) blob.y = canvas.height + blob.radius;
+        if (blob.y > canvas.height + blob.radius) blob.y = -blob.radius;
+        
+        // Create gradient for each blob
+        const gradient = ctx.createRadialGradient(
+          blob.x, blob.y, 0,
+          blob.x, blob.y, blob.radius * (1 + Math.sin(blob.phase) * 0.1)
+        );
+        
+        if (isDarkMode) {
+          // Dark mode: golden honey gradient
+          gradient.addColorStop(0, 'rgba(210, 140, 0, 0.03)');
+          gradient.addColorStop(0.5, 'rgba(210, 140, 0, 0.02)');
+          gradient.addColorStop(1, 'rgba(210, 140, 0, 0)');
+        } else {
+          // Light mode: purple to pink gradient
+          const baseOpacity = 0.02 + Math.sin(time + index) * 0.01;
+          gradient.addColorStop(0, `rgba(147, 51, 234, ${baseOpacity})`);
+          gradient.addColorStop(0.5, `rgba(219, 39, 119, ${baseOpacity * 0.7})`);
+          gradient.addColorStop(1, 'rgba(147, 51, 234, 0)');
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
       
       animationId = requestAnimationFrame(animate);
     };
@@ -645,7 +681,7 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
-// Chatbot Component
+// Improved Chatbot Component with better visibility
 const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -700,7 +736,7 @@ const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
       isExpanded ? 'w-[400px] h-[600px]' : 'w-auto h-auto'
     }`}>
       {!isExpanded ? (
-        // Minimized state - looks like a search bar
+        // Minimized state - chat bubble
         <button
           onClick={() => {
             setIsExpanded(true);
@@ -711,13 +747,13 @@ const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
           </svg>
-          <span className="text-white font-medium">Ask a question</span>
+          <span className="text-white font-medium">Ask Sydney</span>
         </button>
       ) : (
         // Expanded state
         <div className={`flex flex-col h-full ${currentTheme.bg} ${currentTheme.border} border rounded-lg shadow-2xl`}>
           <div className={`flex items-center justify-between p-3 ${currentTheme.border} border-b`}>
-            <h3 className={`font-medium ${currentTheme.text}`}>Bundle Assistant</h3>
+            <h3 className={`font-medium ${currentTheme.text}`}>Sydney - Bundle Assistant</h3>
             <button
               onClick={() => setIsExpanded(false)}
               className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
@@ -727,13 +763,22 @@ const ChatbotWidget = ({ isDarkMode, bundleData, onUpdateBundle }) => {
               </svg>
             </button>
           </div>
-          <div className="flex-1 overflow-hidden" ref={chatbotRef}>
+          <div className="flex-1 overflow-hidden relative" ref={chatbotRef}>
             <zapier-interfaces-chatbot-embed 
               is-popup='false' 
               chatbot-id='cma6zv294001y12wdgvajk0lj' 
               height='100%' 
               width='100%'
+              style={`--zapier-light-color: ${isDarkMode ? '#ffffff' : '#000000'}; --zapier-dark-color: ${isDarkMode ? '#1A1A1A' : '#ffffff'};`}
             ></zapier-interfaces-chatbot-embed>
+            {/* Add overlay to ensure text visibility in light mode */}
+            {!isDarkMode && (
+              <style jsx>{`
+                zapier-interfaces-chatbot-embed {
+                  filter: contrast(1.1);
+                }
+              `}</style>
+            )}
           </div>
         </div>
       )}
@@ -1141,10 +1186,10 @@ const BundleBuilder = () => {
 
   return (
     <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} relative`}>
-      {/* Subtle animated background */}
+      {/* Improved animated background */}
       <AnimatedBackground isDarkMode={isDarkMode} />
       
-      {/* Chatbot Widget */}
+      {/* Chatbot Widget with Sydney */}
       <ChatbotWidget 
         isDarkMode={isDarkMode}
         bundleData={{
@@ -1253,7 +1298,7 @@ const BundleBuilder = () => {
         </div>
       </div>
 
-      {/* Sticky Header */}
+      {/* Sticky Header with improved bundle discount clarity */}
       <div className={`sticky top-0 z-40 ${currentTheme.bg} ${currentTheme.border} border-b backdrop-blur-sm bg-opacity-95`}>
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
@@ -1287,15 +1332,22 @@ const BundleBuilder = () => {
               <div className={`text-xs ${currentTheme.textSecondary} mt-1 text-center`}>{subLength} months</div>
             </div>
 
-            {/* Price Display */}
+            {/* Price Display with improved bundle discount clarity */}
             <div className="text-right ml-4">
               <div className={`text-2xl md:text-3xl font-semibold ${currentTheme.text}`}>
                 ${final.toFixed(0)}
                 <span className={`text-base ${currentTheme.textSecondary} font-normal`}>/mo</span>
               </div>
               {totalSaved > 0 && (
-                <div className={`text-xs ${currentTheme.green}`}>
-                  Save ${totalSaved.toFixed(0)}/mo
+                <div className="space-y-0.5">
+                  <div className={`text-xs ${currentTheme.green}`}>
+                    Save ${totalSaved.toFixed(0)}/mo
+                  </div>
+                  {productCount > 1 && (
+                    <div className={`text-xs ${currentTheme.accentText}`}>
+                      {bundleDiscount}% bundle discount ({productCount} products)
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1339,44 +1391,58 @@ const BundleBuilder = () => {
           </div>
         )}
 
-        {/* Service Selection */}
+        {/* Service Selection with info buttons */}
         <div className="mb-8" ref={productsSectionRef}>
           <h3 className={`text-sm font-medium ${currentTheme.textSecondary} mb-4`}>Select Services</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {products.map(service => (
-              <button
-                key={service}
-                onClick={() => handleProductSelect(service)}
-                className={`p-4 rounded-lg transition-all ${
-                  service === currentlyOpenService 
-                    ? `${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} shadow-lg`
-                    : selectedTiers[service]
-                      ? `${currentTheme.cardBg} ${currentTheme.borderAccent} border-2`
-                      : `${currentTheme.cardBg} ${currentTheme.border} border hover:${currentTheme.borderAccent}`
-                }`}
-              >
-                <ServiceIcon 
-                  service={service} 
-                  className={`w-8 h-8 mx-auto mb-2 ${
+              <div key={service} className="relative">
+                <button
+                  onClick={() => handleProductSelect(service)}
+                  className={`w-full p-4 rounded-lg transition-all ${
                     service === currentlyOpenService 
-                      ? isDarkMode ? 'text-black' : 'text-white'
-                      : ''
-                  }`} 
-                />
-                <h4 className="font-medium text-sm">{service}</h4>
-                <p className={`text-xs mt-1 ${
-                  service === currentlyOpenService 
-                    ? isDarkMode ? 'text-black/70' : 'text-white/70'
-                    : currentTheme.textSecondary
-                }`}>
-                  From ${Math.min(...Object.values(pricing[service]))}
-                </p>
-                {selectedTiers[service] && (
-                  <span className={`inline-block mt-2 text-xs font-medium ${currentTheme.green}`}>
-                    ✓ {selectedTiers[service]}
-                  </span>
-                )}
-              </button>
+                      ? `${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} shadow-lg`
+                      : selectedTiers[service]
+                        ? `${currentTheme.cardBg} ${currentTheme.borderAccent} border-2`
+                        : `${currentTheme.cardBg} ${currentTheme.border} border hover:${currentTheme.borderAccent}`
+                  }`}
+                >
+                  <ServiceIcon 
+                    service={service} 
+                    className={`w-8 h-8 mx-auto mb-2 ${
+                      service === currentlyOpenService 
+                        ? isDarkMode ? 'text-black' : 'text-white'
+                        : ''
+                    }`} 
+                  />
+                  <h4 className="font-medium text-sm">{service}</h4>
+                  <p className={`text-xs mt-1 ${
+                    service === currentlyOpenService 
+                      ? isDarkMode ? 'text-black/70' : 'text-white/70'
+                      : currentTheme.textSecondary
+                  }`}>
+                    From ${Math.min(...Object.values(pricing[service]))}
+                  </p>
+                  {selectedTiers[service] && (
+                    <span className={`inline-block mt-2 text-xs font-medium ${currentTheme.green}`}>
+                      ✓ {selectedTiers[service]}
+                    </span>
+                  )}
+                </button>
+                {/* Info button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openServiceInfoModal(service);
+                  }}
+                  className={`absolute top-2 right-2 p-1 rounded-full ${currentTheme.bg} ${currentTheme.border} border ${currentTheme.textSecondary} hover:${currentTheme.text} transition-colors`}
+                  title={`Learn about ${service}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
             ))}
           </div>
         </div>
@@ -1436,101 +1502,107 @@ const BundleBuilder = () => {
         )}
       </div>
 
-      {/* Purchase Modal */}
+      {/* Purchase Modal with fixed button positioning */}
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`${currentTheme.cardBg} rounded-xl p-6 w-full max-w-md ${currentTheme.border} border`}>
-            {formStep === 0 ? (
-              <>
-                <h2 className={`text-xl font-semibold mb-4 ${currentTheme.text}`}>Finalize Your Bundle</h2>
-                
-                <input
-                  type="text"
-                  placeholder="Bundle Name (Optional)"
-                  value={bundleName}
-                  onChange={(e) => {
-                    setBundleName(e.target.value);
-                    if (initialLoadComplete) {
-                      debouncedSave(0);
-                    }
-                  }}
-                  className={`w-full p-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg mb-4 ${currentTheme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'}`}
-                />
-                
-                <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg mb-4`}>
-                  <h3 className={`font-medium mb-3 ${currentTheme.text}`}>Order Summary</h3>
-                  <div className="space-y-2">
-                    {selected.map(([product, tier]) => (
-                      <div key={product} className={`flex justify-between text-sm ${currentTheme.text}`}>
-                        <span>{product} - {tier}</span>
-                        <span>${pricing[product][tier]}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={`mt-3 pt-3 border-t ${currentTheme.border}`}>
-                    <div className={`flex justify-between text-sm ${currentTheme.text}`}>
-                      <span>Subscription ({subLength} months)</span>
-                      <span className={currentTheme.green}>-{subscriptionDiscount}%</span>
-                    </div>
-                    {bundleDiscount > 0 && (
-                      <div className={`flex justify-between text-sm ${currentTheme.text}`}>
-                        <span>Bundle discount</span>
-                        <span className={currentTheme.green}>-{bundleDiscount}%</span>
-                      </div>
-                    )}
-                    <div className={`flex justify-between font-semibold mt-2 text-lg ${currentTheme.text}`}>
-                      <span>Total</span>
-                      <span>${final.toFixed(2)}/mo</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <SubscriptionDisclosure />
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleBundleReject}
-                    className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleBundleConfirm}
-                    className={`flex-1 py-3 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
-                  >
-                    Continue
-                  </button>
-                </div>
-              </>
-            ) : formStep === 1 ? (
-              <UserInfoForm 
-                onSubmit={handleUserInfoSubmit} 
-                onCancel={() => setFormStep(0)}
-                setShowPrivacyPolicy={setShowPrivacyPolicy}
-              />
-            ) : (
-              <>
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className={`w-12 h-12 border-4 ${currentTheme.borderAccent} border-t-transparent rounded-full animate-spin mb-4`}></div>
-                    <p className={currentTheme.text}>Processing your agreement...</p>
-                  </div>
-                ) : (
-                  <ContractAgreementForm 
-                    onSubmit={handleAgreementSubmit}
-                    onCancel={() => setFormStep(1)}
-                    bundleName={bundleName}
-                    selectedServices={Object.entries(selectedTiers)
-                      .filter(([, tier]) => tier)
-                      .map(([product, tier]) => `${product}: ${tier}`)
-                      .join(', ')}
-                    clientName={userInfo?.clientName || ''}
-                    subLength={subLength}
-                    finalMonthly={final.toFixed(2)}
-                    bundleID={bundleID}
+          <div className={`${currentTheme.cardBg} rounded-xl w-full max-w-md ${currentTheme.border} border flex flex-col max-h-[90vh]`}>
+            {/* Modal content with scrollable area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {formStep === 0 ? (
+                <>
+                  <h2 className={`text-xl font-semibold mb-4 ${currentTheme.text}`}>Finalize Your Bundle</h2>
+                  
+                  <input
+                    type="text"
+                    placeholder="Bundle Name (Optional)"
+                    value={bundleName}
+                    onChange={(e) => {
+                      setBundleName(e.target.value);
+                      if (initialLoadComplete) {
+                        debouncedSave(0);
+                      }
+                    }}
+                    className={`w-full p-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg mb-4 ${currentTheme.text} ${isDarkMode ? 'placeholder-gray-400' : 'placeholder-gray-500'}`}
                   />
-                )}
-              </>
+                  
+                  <div className={`p-4 ${currentTheme.bgTertiary} rounded-lg mb-4`}>
+                    <h3 className={`font-medium mb-3 ${currentTheme.text}`}>Order Summary</h3>
+                    <div className="space-y-2">
+                      {selected.map(([product, tier]) => (
+                        <div key={product} className={`flex justify-between text-sm ${currentTheme.text}`}>
+                          <span>{product} - {tier}</span>
+                          <span>${pricing[product][tier]}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`mt-3 pt-3 border-t ${currentTheme.border}`}>
+                      <div className={`flex justify-between text-sm ${currentTheme.text}`}>
+                        <span>Subscription ({subLength} months)</span>
+                        <span className={currentTheme.green}>-{subscriptionDiscount}%</span>
+                      </div>
+                      {bundleDiscount > 0 && (
+                        <div className={`flex justify-between text-sm ${currentTheme.text}`}>
+                          <span>Bundle discount ({productCount} products)</span>
+                          <span className={currentTheme.green}>-{bundleDiscount}%</span>
+                        </div>
+                      )}
+                      <div className={`flex justify-between font-semibold mt-2 text-lg ${currentTheme.text}`}>
+                        <span>Total</span>
+                        <span>${final.toFixed(2)}/mo</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <SubscriptionDisclosure />
+                </>
+              ) : formStep === 1 ? (
+                <UserInfoForm 
+                  onSubmit={handleUserInfoSubmit} 
+                  onCancel={() => setFormStep(0)}
+                  setShowPrivacyPolicy={setShowPrivacyPolicy}
+                />
+              ) : (
+                <>
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <div className={`w-12 h-12 border-4 ${currentTheme.borderAccent} border-t-transparent rounded-full animate-spin mb-4`}></div>
+                      <p className={currentTheme.text}>Processing your agreement...</p>
+                    </div>
+                  ) : (
+                    <ContractAgreementForm 
+                      onSubmit={handleAgreementSubmit}
+                      onCancel={() => setFormStep(1)}
+                      bundleName={bundleName}
+                      selectedServices={Object.entries(selectedTiers)
+                        .filter(([, tier]) => tier)
+                        .map(([product, tier]) => `${product}: ${tier}`)
+                        .join(', ')}
+                      clientName={userInfo?.clientName || ''}
+                      subLength={subLength}
+                      finalMonthly={final.toFixed(2)}
+                      bundleID={bundleID}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+            
+            {/* Fixed action buttons at bottom */}
+            {formStep === 0 && (
+              <div className="flex gap-3 p-6 pt-0">
+                <button
+                  onClick={handleBundleReject}
+                  className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBundleConfirm}
+                  className={`flex-1 py-3 ${currentTheme.accent} ${isDarkMode ? 'text-black' : 'text-white'} font-medium rounded-lg ${currentTheme.accentHover} transition-colors`}
+                >
+                  Continue
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1636,10 +1708,13 @@ const BundleBuilder = () => {
                 Select This Service
               </button>
               <button
-                onClick={() => setShowServiceInfoModal(false)}
+                onClick={() => {
+                  setShowServiceInfoModal(false);
+                  setIsExpanded(true);
+                }}
                 className={`flex-1 py-3 ${currentTheme.bgTertiary} ${currentTheme.border} border rounded-lg font-medium transition-colors hover:${currentTheme.borderAccent} ${currentTheme.text}`}
               >
-                Close
+                Ask Sydney
               </button>
             </div>
           </div>
