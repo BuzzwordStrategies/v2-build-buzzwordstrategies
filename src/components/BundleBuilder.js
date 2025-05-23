@@ -684,8 +684,10 @@ const AnimatedBackground = ({ isDarkMode }) => {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 };
 
-// Enhanced Sydney Chatbot with glowing, inviting design
 const ChatbotWidget = ({ isDarkMode }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showNotificationBadge, setShowNotificationBadge] = useState(true);
+
   useEffect(() => {
     // Load Zapier script if not already loaded
     const existingScript = document.querySelector('script[src*="zapier-interfaces"]');
@@ -697,7 +699,13 @@ const ChatbotWidget = ({ isDarkMode }) => {
       document.body.appendChild(script);
     }
 
-    // Add custom styles for the chatbot button to make it more inviting
+    // Tooltip animation timer
+    const tooltipTimer = setInterval(() => {
+      setShowTooltip(true);
+      setTimeout(() => setShowTooltip(false), 4000); // Show for 4 seconds
+    }, 15000); // Every 15 seconds
+
+    // Add custom styles for the enhanced chatbot button
     const customStyles = document.createElement('style');
     customStyles.textContent = `
       /* Enhanced chatbot button styling */
@@ -705,62 +713,263 @@ const ChatbotWidget = ({ isDarkMode }) => {
         --chatbot-button-background: ${isDarkMode ? 'linear-gradient(135deg, #D28C00 0%, #FFBA38 100%)' : 'linear-gradient(135deg, #9333EA 0%, #DB2777 100%)'} !important;
         --chatbot-button-color: ${isDarkMode ? '#1A1A1A' : '#FFFFFF'} !important;
         --chatbot-button-border-radius: 50px !important;
-        --chatbot-button-box-shadow: 0 8px 32px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4), 0 0 20px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.3) !important;
-        --chatbot-button-hover-transform: scale(1.05) !important;
+        --chatbot-button-box-shadow: 0 12px 48px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6), 0 0 30px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4) !important;
+        --chatbot-button-hover-transform: scale(1.1) !important;
         --chatbot-button-transition: all 0.3s ease !important;
+        position: relative !important;
+        z-index: 1000 !important;
       }
       
-      /* Custom glow animation */
-      @keyframes chatbot-glow {
+      /* Floating particles animation */
+      @keyframes float-particles {
         0%, 100% {
-          box-shadow: 0 8px 32px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4), 0 0 20px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.3);
+          transform: translateY(0px) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-20px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+      
+      /* Attention-grabbing glow pulse */
+      @keyframes chatbot-mega-glow {
+        0%, 100% {
+          box-shadow: 0 12px 48px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6), 0 0 30px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4);
+          transform: scale(1);
+        }
+        25% {
+          box-shadow: 0 16px 60px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.8), 0 0 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6);
+          transform: scale(1.02);
         }
         50% {
-          box-shadow: 0 12px 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6), 0 0 30px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.5);
+          box-shadow: 0 20px 72px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 1.0), 0 0 50px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.8);
+          transform: scale(1.05);
+        }
+        75% {
+          box-shadow: 0 16px 60px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.8), 0 0 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.6);
+          transform: scale(1.02);
         }
       }
       
-      /* Apply glow animation to the chatbot button */
-      zapier-interfaces-chatbot-embed::part(button) {
-        animation: chatbot-glow 2s ease-in-out infinite;
-        background: ${isDarkMode ? 'linear-gradient(135deg, #D28C00 0%, #FFBA38 100%)' : 'linear-gradient(135deg, #9333EA 0%, #DB2777 100%)'} !important;
-        border: none !important;
-        font-weight: 600 !important;
-        font-size: 16px !important;
-        padding: 16px 24px !important;
-        min-width: 120px !important;
-        height: 64px !important;
+      /* Attention shake animation */
+      @keyframes chatbot-shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+        20%, 40%, 60%, 80% { transform: translateX(2px); }
       }
       
-      /* Hover effects */
+      /* Bounce animation */
+      @keyframes chatbot-bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-8px); }
+        60% { transform: translateY(-4px); }
+      }
+      
+      /* Notification badge pulse */
+      @keyframes badge-pulse {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.8;
+        }
+      }
+      
+      /* Apply enhanced animations to the chatbot button */
+      zapier-interfaces-chatbot-embed::part(button) {
+        animation: chatbot-mega-glow 3s ease-in-out infinite, chatbot-bounce 4s ease-in-out infinite 1s, chatbot-shake 6s ease-in-out infinite 3s;
+        background: ${isDarkMode ? 'linear-gradient(135deg, #D28C00 0%, #FFBA38 100%)' : 'linear-gradient(135deg, #9333EA 0%, #DB2777 100%)'} !important;
+        border: none !important;
+        font-weight: 700 !important;
+        font-size: 17px !important;
+        padding: 20px 28px !important;
+        min-width: 140px !important;
+        height: 72px !important;
+        position: relative !important;
+        overflow: visible !important;
+      }
+      
+      /* Enhanced hover effects */
       zapier-interfaces-chatbot-embed::part(button):hover {
-        transform: scale(1.05) !important;
-        box-shadow: 0 16px 48px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.5), 0 0 40px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.4) !important;
+        transform: scale(1.15) !important;
+        box-shadow: 0 24px 80px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.7), 0 0 60px rgba(${isDarkMode ? '210, 140, 0' : '147, 51, 234'}, 0.5) !important;
+        animation-play-state: paused !important;
       }
       
       /* Button icon styling */
       zapier-interfaces-chatbot-embed::part(button-icon) {
-        width: 24px !important;
-        height: 24px !important;
-        margin-right: 8px !important;
+        width: 28px !important;
+        height: 28px !important;
+        margin-right: 10px !important;
+      }
+      
+      /* Container for floating elements */
+      .chatbot-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+      
+      /* Notification badge */
+      .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        background: ${isDarkMode ? '#FF4444' : '#FF3366'};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        animation: badge-pulse 2s ease-in-out infinite;
+        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+        z-index: 1001;
+      }
+      
+      /* Floating tooltip */
+      .chatbot-tooltip {
+        position: absolute;
+        bottom: 80px;
+        right: 0;
+        background: ${isDarkMode ? '#2A2A2A' : '#FFFFFF'};
+        color: ${isDarkMode ? '#F8F6F0' : '#1A1A1A'};
+        padding: 12px 16px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        border: 1px solid ${isDarkMode ? '#D28C00' : '#9333EA'};
+        z-index: 1001;
+        max-width: 200px;
+        white-space: normal;
+        text-align: center;
+      }
+      
+      .chatbot-tooltip.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .chatbot-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        right: 20px;
+        border: 8px solid transparent;
+        border-top-color: ${isDarkMode ? '#2A2A2A' : '#FFFFFF'};
+      }
+      
+      /* Floating particles */
+      .particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: ${isDarkMode ? '#FFBA38' : '#9333EA'};
+        border-radius: 50%;
+        animation: float-particles 3s ease-out infinite;
+        pointer-events: none;
+      }
+      
+      .particle:nth-child(2) { animation-delay: 0.5s; left: 10px; }
+      .particle:nth-child(3) { animation-delay: 1s; left: 20px; }
+      .particle:nth-child(4) { animation-delay: 1.5s; left: 30px; }
+      .particle:nth-child(5) { animation-delay: 2s; left: 40px; }
+      
+      /* Pulsing ring effect */
+      .pulse-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100px;
+        height: 100px;
+        border: 2px solid ${isDarkMode ? '#D28C00' : '#9333EA'};
+        border-radius: 50%;
+        animation: pulse-ring 2s ease-out infinite;
+        pointer-events: none;
+      }
+      
+      @keyframes pulse-ring {
+        0% {
+          transform: translate(-50%, -50%) scale(0.8);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(2);
+          opacity: 0;
+        }
       }
     `;
     document.head.appendChild(customStyles);
     
     return () => {
-      document.head.removeChild(customStyles);
+      clearInterval(tooltipTimer);
+      if (document.head.contains(customStyles)) {
+        document.head.removeChild(customStyles);
+      }
     };
   }, [isDarkMode]);
-  
-  // Use Zapier's popup implementation directly
+
+  // Hide notification badge when chatbot is clicked
+  const handleChatbotClick = () => {
+    setShowNotificationBadge(false);
+    setShowTooltip(false);
+  };
+
   return (
-    <zapier-interfaces-chatbot-embed 
-      is-popup='true' 
-      chatbot-id='cma6zv294001y12wdgvajk0lj'
-    ></zapier-interfaces-chatbot-embed>
+    <div className="chatbot-container">
+      {/* Pulsing ring effect */}
+      <div className="pulse-ring"></div>
+      
+      {/* Floating particles */}
+      <div className="particle" style={{ bottom: '40px', right: '10px' }}></div>
+      <div className="particle" style={{ bottom: '45px', right: '15px' }}></div>
+      <div className="particle" style={{ bottom: '35px', right: '20px' }}></div>
+      <div className="particle" style={{ bottom: '42px', right: '25px' }}></div>
+      <div className="particle" style={{ bottom: '38px', right: '30px' }}></div>
+      
+      {/* Notification badge */}
+      {showNotificationBadge && (
+        <div className="notification-badge">
+          !
+        </div>
+      )}
+      
+      {/* Floating tooltip */}
+      <div className={`chatbot-tooltip ${showTooltip ? 'show' : ''}`}>
+        💬 Ask Sydney about marketing strategies!
+      </div>
+      
+      {/* Zapier chatbot embed */}
+      <div onClick={handleChatbotClick}>
+        <zapier-interfaces-chatbot-embed 
+          is-popup='true' 
+          chatbot-id='cma6zv294001y12wdgvajk0lj'
+        ></zapier-interfaces-chatbot-embed>
+      </div>
+    </div>
   );
 };
 
+export default ChatbotWidget;
 // Main Component
 const BundleBuilder = () => {
   // Theme state - detect system preference
